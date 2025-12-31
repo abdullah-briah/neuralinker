@@ -21,7 +21,6 @@ const auth = new GoogleAuth({
     ],
 });
 
-
 /* ===============================
    Types
 ================================ */
@@ -29,6 +28,8 @@ const auth = new GoogleAuth({
 export interface MatchResult {
     score: number;
     reason: string;
+    matchedSkills: string[];
+    unmatchedSkills: string[];
 }
 
 /* ===============================
@@ -54,66 +55,61 @@ const normalizeSkills = (skills: unknown): string[] => {
 };
 
 /* ===============================
-   Local Heuristic Fallback
+   Local Heuristic Fallback (Updated)
 ================================ */
 
-const calculateHeuristicMatch = (
-    userProfile: {
+const calculateProfileProjectMatch = (
+    user: {
         name: string;
         title: string;
         bio: string;
         skills: string[];
     },
-    projectDetails: {
+    project: {
         title: string;
-        description: string;
-        skills: string[];
-        category: string;
-    },
-    errorMsg?: string
+        shortDescription: string;
+        requiredSkills: string[];
+    }
 ): MatchResult => {
 
     const normalize = (s: string) => s.toLowerCase().trim();
 
-    const userSkills = new Set(userProfile.skills.map(normalize));
-    const projectSkills = projectDetails.skills.map(normalize);
+    // كلمات المستخدم: skills + title + bio
+    const userWords = new Set<string>();
+    user.skills.forEach(s => userWords.add(normalize(s)));
+    if (user.title) userWords.add(normalize(user.title));
+    user.bio.split(/\W+/).map(w => w.trim()).filter(Boolean).forEach(w => userWords.add(normalize(w)));
 
-    const matchedSkills = projectSkills.filter(s => userSkills.has(s));
-    const total = projectSkills.length || 1;
+    // كلمات المشروع: requiredSkills + title + shortDescription
+    const projectWords = new Set<string>();
+    project.requiredSkills.forEach(s => projectWords.add(normalize(s)));
+    project.title.split(/\W+/).map(w => w.trim()).filter(Boolean).forEach(w => projectWords.add(normalize(w)));
+    project.shortDescription.split(/\W+/).map(w => w.trim()).filter(Boolean).forEach(w => projectWords.add(normalize(w)));
 
-    const skillScore = (matchedSkills.length / total) * 100;
+    // مطابقة الكلمات
+    const matchedSkills = Array.from(projectWords).filter(w => userWords.has(w));
+    const unmatchedSkills = Array.from(projectWords).filter(w => !userWords.has(w));
 
-    let bonus = 0;
-    if (
-        userProfile.title &&
-        projectDetails.title
-            .toLowerCase()
-            .includes(userProfile.title.toLowerCase())
-    ) {
-        bonus += 15;
-    }
+    const score = Math.round((matchedSkills.length / (projectWords.size || 1)) * 100);
 
-    const finalScore = Math.min(100, Math.round(skillScore + bonus));
+    // تحليل نصي
+    let reason = `${user.name} Match Analysis:\n`;
+    reason += `- Matched keywords: ${matchedSkills.slice(0, 10).join(", ") || "None"}\n`;
+    reason += `- Missing / unmatched keywords: ${unmatchedSkills.slice(0, 10).join(", ") || "None"}\n`;
 
-    let reason: string;
-
-    if (matchedSkills.length > 0) {
-        if (finalScore >= 70) {
-            reason = `${userProfile.name} is a strong match. `;
-        } else if (finalScore >= 40) {
-            reason = `${userProfile.name} is a potential match. `;
-        } else {
-            reason = `${userProfile.name} is a partial match. `;
-        }
-
-        reason += `Matched skills: ${matchedSkills.slice(0, 3).join(", ")}.`;
+    if (score >= 70) {
+        reason += `- Overall fit: Strong match.`;
+    } else if (score >= 40) {
+        reason += `- Overall fit: Potential match.`;
     } else {
-        reason = `${userProfile.name} does not meet core requirements.`;
+        reason += `- Overall fit: Weak match.`;
     }
 
     return {
-        score: finalScore,
-        reason: `${reason} (Fallback Analysis${errorMsg ? `: ${errorMsg}` : ""})`,
+        score,
+        reason,
+        matchedSkills,
+        unmatchedSkills
     };
 };
 
@@ -130,9 +126,9 @@ export const analyzeMatch = async (
     },
     projectDetails: {
         title: string;
-        description: string;
-        skills: string[];
-        category: string;
+        shortDescription: string;
+        requiredSkills: string[];
+        category?: string;
     }
 ): Promise<MatchResult> => {
 
@@ -145,6 +141,8 @@ export const analyzeMatch = async (
         return {
             score: 0,
             reason: "Insufficient user profile data.",
+            matchedSkills: [],
+            unmatchedSkills: []
         };
     }
 
@@ -193,7 +191,9 @@ You are an expert project evaluator.
 Return STRICT JSON ONLY:
 {
   "score": number,
-  "reason": "string"
+  "reason": "string",
+  "matchedSkills": string[],
+  "unmatchedSkills": string[]
 }
 `;
 
@@ -245,11 +245,11 @@ ${prompt}
         throw new Error("Invalid AI response");
 
     } catch (e: any) {
-        return calculateHeuristicMatch(
-            userProfile,
-            projectDetails,
-            discoveryError || e.message
-        );
+        return calculateProfileProjectMatch(userProfile, {
+            title: projectDetails.title,
+            shortDescription: projectDetails.shortDescription,
+            requiredSkills: projectDetails.requiredSkills
+        });
     }
 };
 
@@ -293,9 +293,9 @@ export const analyzeAndSaveInsight = async (
     },
     projectDetails: {
         title: string;
-        description: string;
-        skills: unknown;
-        category: string;
+        shortDescription: string;
+        requiredSkills: unknown;
+        category?: string;
     }
 ) => {
 
@@ -306,7 +306,7 @@ export const analyzeAndSaveInsight = async (
         },
         {
             ...projectDetails,
-            skills: normalizeSkills(projectDetails.skills),
+            requiredSkills: normalizeSkills(projectDetails.requiredSkills),
         }
     );
 

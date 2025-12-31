@@ -22,6 +22,7 @@ const app = express();
 const corsOptions = {
     origin: [
         "https://neuralinker-sadl.vercel.app", // الدومين الرئيسي
+        "https://neuralinker-sadl-9ok0y5443-abdullah-ahmed-briahs-projects.vercel.app",
         "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app", // Preview
         "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app" // Preview
     ],
