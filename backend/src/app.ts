@@ -21,12 +21,13 @@ const app = express();
 // CORS Configuration
 const corsOptions = {
     origin: [
-        "https://neuralinker-sadl.vercel.app/", // الدومين الرئيسي
+        "https://neuralinker-sadl.vercel.app", // الدومين الرئيسي
         "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app", // Preview
         "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app" // Preview
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
+    optionsSuccessStatus: 200 // لتجنب مشاكل بعض المتصفحات مع preflight
 };
 
 app.use(cors(corsOptions));
