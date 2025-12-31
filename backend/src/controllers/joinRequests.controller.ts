@@ -8,9 +8,6 @@ import prisma from '../services/prisma';
  * ===============================
  * Create Join Request
  * ===============================
- * ينشئ JoinRequest + AI Match
- * 🔔 ينشئ إشعار للمستخدم (Popup)
- * 🔔 إشعار لصاحب المشروع (موجود مسبقًا في service)
  */
 export const create = async (req: AuthRequest, res: Response) => {
     try {
@@ -28,10 +25,16 @@ export const create = async (req: AuthRequest, res: Response) => {
         );
 
         // 2️⃣ 🔔 إشعار فوري للمرسل (Popup UX)
+        // جلب المشروع للتأكد من وجوده
+        const project = await prisma.project.findUnique({
+            where: { id: joinRequest.projectId },
+            select: { title: true }
+        });
+
         await notificationService.createNotification({
             userId,
             title: 'Join Request Sent',
-            message: `Your request to join "${joinRequest.project.title}" has been sent successfully.`,
+            message: `Your request to join "${project?.title ?? 'the project'}" has been sent successfully.`,
             joinRequestId: joinRequest.id,
             projectId: joinRequest.projectId,
         });
@@ -63,13 +66,8 @@ export const listProjectRequests = async (
             select: { ownerId: true },
         });
 
-        if (!project) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-
-        if (project.ownerId !== req.user!.id) {
-            return res.status(403).json({ message: 'Forbidden' });
-        }
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (project.ownerId !== req.user!.id) return res.status(403).json({ message: 'Forbidden' });
 
         const requests = await joinRequestService.getProjectRequests(
             req.params.projectId
@@ -89,7 +87,6 @@ export const listProjectRequests = async (
 export const respond = async (req: AuthRequest, res: Response) => {
     try {
         const { status } = req.body;
-
         if (!['accepted', 'rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status value' });
         }
@@ -99,13 +96,9 @@ export const respond = async (req: AuthRequest, res: Response) => {
             include: { project: true },
         });
 
-        if (!joinRequest) {
-            return res.status(404).json({ message: 'Join request not found' });
-        }
-
-        if (joinRequest.project.ownerId !== req.user!.id) {
-            return res.status(403).json({ message: 'Forbidden' });
-        }
+        if (!joinRequest) return res.status(404).json({ message: 'Join request not found' });
+        if (!joinRequest.project) return res.status(500).json({ message: 'Project data missing' });
+        if (joinRequest.project.ownerId !== req.user!.id) return res.status(403).json({ message: 'Forbidden' });
 
         const updatedRequest = await joinRequestService.updateStatus(
             req.params.id,
@@ -130,9 +123,8 @@ export const getById = async (req: AuthRequest, res: Response) => {
             include: { project: true, user: true },
         });
 
-        if (!joinRequest) {
-            return res.status(404).json({ message: 'Join request not found' });
-        }
+        if (!joinRequest) return res.status(404).json({ message: 'Join request not found' });
+        if (!joinRequest.project) return res.status(500).json({ message: 'Project data missing' });
 
         res.json(joinRequest);
     } catch (error: any) {

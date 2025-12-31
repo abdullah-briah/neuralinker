@@ -47,39 +47,20 @@ export const getNotifications = async (userId: string) => {
     }
 
     return prisma.notification.findMany({
-        where: {
-            userId,
-            isDeleted: false, // 👈 لو عندك soft delete
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-        take: 20, // 👈 مهم جدًا للأداء والسرعة
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
         include: {
             joinRequest: {
                 include: {
                     user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            avatarUrl: true,
-                            skills: true,
-                        },
+                        select: { id: true, name: true, avatarUrl: true, skills: true },
                     },
-                    aiInsight: {
-                        select: {
-                            score: true,
-                            result: true,
-                        },
-                    },
+                    aiInsight: { select: { score: true, result: true } },
                 },
             },
             project: {
-                select: {
-                    id: true,
-                    title: true,
-                    category: true,
-                },
+                select: { id: true, title: true, category: true },
             },
         },
     });
@@ -97,11 +78,7 @@ export const getUnreadCount = async (userId: string) => {
     }
 
     return prisma.notification.count({
-        where: {
-            userId,
-            isRead: false,
-            isDeleted: false,
-        },
+        where: { userId, isRead: false },
     });
 };
 
@@ -117,9 +94,7 @@ export const markAsRead = async (notificationId: string) => {
 
     return prisma.notification.update({
         where: { id: notificationId },
-        data: {
-            isRead: true,
-        },
+        data: { isRead: true },
     });
 };
 
@@ -134,12 +109,7 @@ export const markAllAsRead = async (userId: string) => {
     }
 
     return prisma.notification.updateMany({
-        where: {
-            userId,
-            isRead: false,
-        },
-        data: {
-            isRead: true,
-        },
+        where: { userId, isRead: false },
+        data: { isRead: true },
     });
 };
