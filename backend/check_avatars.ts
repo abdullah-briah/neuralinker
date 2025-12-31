@@ -1,0 +1,28 @@
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+    const users = await prisma.user.findMany({
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true
+        }
+    });
+
+    console.log('--- User Avatars ---');
+    users.forEach(u => {
+        console.log(`User: ${u.name} (${u.email}) - Avatar: ${u.avatarUrl}`);
+    });
+}
+
+main()
+    .catch(e => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });

@@ -1,0 +1,90 @@
+.hero {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    padding: 0 2rem;
+    pointer-events: none;
+    /* Let clicks pass through to canvas if needed, but usually we want interaction */
+}
+
+.hero-content {
+    pointer-events: auto;
+    max-width: 800px;
+    animation: fadeIn 1.5s ease-out;
+}
+
+.hero-headline {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+.hero-headline span {
+    display: block;
+}
+
+.line-1 {
+    color: #fff;
+    text-shadow: 0 0 20px rgba(155, 44, 182, 0.3);
+}
+
+.line-2 {
+    background: linear-gradient(90deg, #9b2cb6, #d8b4fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(155, 44, 182, 0.5);
+}
+
+.hero-subtext {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+}
+
+.cta-button {
+    background: linear-gradient(135deg, #9b2cb6 0%, #7a1f91 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 1rem 2.5rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(155, 44, 182, 0.4);
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(155, 44, 182, 0.6);
+    background: linear-gradient(135deg, #b04bc9 0%, #8e24aa 100%);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-headline {
+        font-size: 2.5rem;
+    }
+
+    .hero-subtext {
+        font-size: 1rem;
+    }
+}

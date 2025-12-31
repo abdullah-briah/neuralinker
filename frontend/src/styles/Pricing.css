@@ -1,0 +1,128 @@
+.pricing-section {
+    padding: 6rem 2rem;
+    background: transparent;
+    position: relative;
+    z-index: 10;
+}
+
+.pricing-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.pricing-card {
+    background: rgba(30, 41, 59, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+    transition: all 0.4s ease;
+    position: relative;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    background: rgba(40, 40, 40, 0.4);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.free-plan {
+    border-top: 4px solid var(--text-muted);
+}
+
+.pro-plan {
+    border: 1px solid var(--primary);
+    background: rgba(155, 44, 182, 0.05);
+    box-shadow: 0 0 30px rgba(155, 44, 182, 0.1);
+}
+
+.recommended-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.price {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 2rem;
+}
+
+.price span {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2.5rem;
+    text-align: left;
+}
+
+.features-list li {
+    color: #e5e5e5;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+}
+
+.features-list li::before {
+    content: "✓";
+    color: var(--primary);
+    margin-right: 0.8rem;
+    font-weight: bold;
+}
+
+.plan-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fff;
+    background: transparent;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.plan-btn:hover {
+    background: #fff;
+    color: #000;
+}
+
+.pro-btn {
+    background: linear-gradient(135deg, #9b2cb6 0%, #7a1f91 100%);
+    border: none;
+    color: #fff;
+}
+
+.pro-btn:hover {
+    background: linear-gradient(135deg, #b04bc9 0%, #8e24aa 100%);
+    box-shadow: 0 4px 15px rgba(155, 44, 182, 0.4);
+}

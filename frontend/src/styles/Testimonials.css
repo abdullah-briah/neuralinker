@@ -1,0 +1,111 @@
+.testimonials-section {
+    padding: 6rem 0;
+    /* Full width flow */
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    background: transparent;
+    overflow: hidden;
+    /* Hide horizontal scrollbar */
+}
+
+/* Container limits width but allows marquee to overflow */
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    padding: 2rem 0;
+    /* Mask for fade effect on edges */
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-content {
+    display: flex;
+    gap: 2rem;
+    width: max-content;
+    animation: scroll 40s linear infinite;
+    padding-left: 2rem;
+}
+
+/* Pause/Slow on hover */
+.marquee-content:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+        /* Scroll exactly half the duplicated content */
+    }
+}
+
+.testimonial-card {
+    background: rgba(30, 41, 59, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: left;
+    backdrop-filter: blur(10px);
+    width: 350px;
+    /* Fixed width for uniform strip */
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    user-select: none;
+    /* Prevent text selection while scrolling */
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    background: rgba(168, 85, 247, 0.08);
+    /* Purple tint */
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.1);
+}
+
+.stars {
+    color: #fbbf24;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+}
+
+.testimonial-comment {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    min-height: 72px;
+    /* Uniform height alignment */
+    font-size: 0.95rem;
+}
+
+.testimonial-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #a855f7, #3b82f6);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: #fff;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+}
