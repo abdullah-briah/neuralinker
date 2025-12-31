@@ -11,14 +11,12 @@ import { analyzeAndSaveInsight } from "./ai.service";
 const normalizeSkills = (skills: Prisma.JsonValue | string | null): string[] => {
     if (!skills) return [];
 
-    // إذا كانت JsonArray
     if (Array.isArray(skills)) {
         return skills
             .filter(s => typeof s === "string")
             .map(s => s.trim());
     }
 
-    // إذا كانت string مفصولة بفواصل
     if (typeof skills === "string") {
         return skills
             .split(",")
@@ -39,7 +37,6 @@ export const createRequest = async (
     userId: string
 ): Promise<JoinRequest> => {
 
-    // 1️⃣ تأكد أن المستخدم ليس عضوًا بالفعل
     const existingMember = await prisma.projectMember.findFirst({
         where: { projectId, userId },
     });
@@ -48,7 +45,6 @@ export const createRequest = async (
         throw new Error("User is already a member of this project");
     }
 
-    // 2️⃣ تأكد أنه لا يوجد طلب سابق pending
     const existingRequest = await prisma.joinRequest.findFirst({
         where: {
             projectId,
@@ -61,7 +57,6 @@ export const createRequest = async (
         throw new Error("Join request already sent");
     }
 
-    // 3️⃣ إنشاء طلب الانضمام
     const joinRequest = await prisma.joinRequest.create({
         data: {
             projectId,
@@ -94,9 +89,9 @@ export const createRequest = async (
             },
             {
                 title: joinRequest.project.title,
-                shortDescription: joinRequest.project.shortDescription,
+                shortDescription: joinRequest.project.description, // ✅ mapping صحيح
+                requiredSkills: projectSkills,                    // ✅ الاسم الصحيح
                 category: joinRequest.project.category,
-                skills: projectSkills,
             }
         );
 
@@ -114,11 +109,10 @@ export const createRequest = async (
 
     } catch (error) {
         console.error("❌ AI Match Error:", error);
-        // لا نفشل الطلب الأساسي
     }
 
     /* ===============================
-       5️⃣ 🔔 إشعار لصاحب المشروع
+       5️⃣ 🔔 Notification
     =============================== */
 
     const reasonPreview = matchReason
@@ -148,7 +142,7 @@ export const getProjectRequests = async (
         where: { projectId },
         include: {
             user: true,
-            aiInsight: true, // ✅ casing الصحيح حسب Prisma
+            aiInsight: true,
         },
         orderBy: { createdAt: "desc" },
     });
@@ -199,7 +193,6 @@ export const updateStatus = async (
                 message: `You have been accepted into project "${request.project.title}"`,
                 projectId: request.projectId,
             });
-
         } else {
             await notificationService.createNotification({
                 userId: request.userId,
@@ -215,7 +208,7 @@ export const updateStatus = async (
 
 /**
  * ===============================
- * Count Pending Requests (Owner)
+ * Count Pending Requests
  * ===============================
  */
 export const countPendingRequests = async (
