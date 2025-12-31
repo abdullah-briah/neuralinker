@@ -18,8 +18,20 @@ import { UPLOADS_DIR } from './config/constants';
 
 const app = express();
 
+// CORS Configuration
+const corsOptions = {
+    origin: [
+        "https://neuralinker-sadl.vercel.app", // الدومين الرئيسي
+        "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app", // Preview
+        "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app" // Preview
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
+
 // Middlewares
-app.use(cors());
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
