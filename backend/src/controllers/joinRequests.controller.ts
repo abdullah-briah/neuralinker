@@ -1,30 +1,49 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/express';
 import * as joinRequestService from '../services/joinRequests.service';
+import * as notificationService from '../services/notifications.service';
 import prisma from '../services/prisma';
 
 /**
  * ===============================
  * Create Join Request
  * ===============================
- * ينشئ JoinRequest، ينشئ Notification، ويحسب AI Match Score
+ * ينشئ JoinRequest + AI Match
+ * 🔔 ينشئ إشعار للمستخدم (Popup)
+ * 🔔 إشعار لصاحب المشروع (موجود مسبقًا في service)
  */
 export const create = async (req: AuthRequest, res: Response) => {
     try {
         const { projectId } = req.body;
+        const userId = req.user!.id;
 
-        // إنشاء JoinRequest + Notification + AI Match
+        if (!projectId) {
+            return res.status(400).json({ message: 'projectId is required' });
+        }
+
+        // 1️⃣ إنشاء الطلب (يتضمن AI + إشعار للمالك)
         const joinRequest = await joinRequestService.createRequest(
-            req.user!.id,
-            projectId
+            projectId,
+            userId
         );
 
-        // إرسال الرد للمستخدم
+        // 2️⃣ 🔔 إشعار فوري للمرسل (Popup UX)
+        await notificationService.createNotification({
+            userId,
+            title: 'Join Request Sent',
+            message: `Your request to join "${joinRequest.project.title}" has been sent successfully.`,
+            joinRequestId: joinRequest.id,
+            projectId: joinRequest.projectId,
+        });
+
+        // 3️⃣ الرد
         res.status(201).json({
             message: 'Join request created successfully',
             joinRequest,
         });
+
     } catch (error: any) {
+        console.error('Create Join Request Error:', error);
         res.status(400).json({ message: error.message });
     }
 };
@@ -71,12 +90,10 @@ export const respond = async (req: AuthRequest, res: Response) => {
     try {
         const { status } = req.body;
 
-        // ✅ Validate status
         if (!['accepted', 'rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status value' });
         }
 
-        // 1️⃣ Get join request with project
         const joinRequest = await prisma.joinRequest.findUnique({
             where: { id: req.params.id },
             include: { project: true },
@@ -86,12 +103,10 @@ export const respond = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: 'Join request not found' });
         }
 
-        // 2️⃣ Check ownership
         if (joinRequest.project.ownerId !== req.user!.id) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        // 3️⃣ Update status
         const updatedRequest = await joinRequestService.updateStatus(
             req.params.id,
             status

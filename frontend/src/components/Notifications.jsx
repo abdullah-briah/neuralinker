@@ -1,105 +1,160 @@
-// src/components/Notifications.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import "../styles/Notifications.css";
 
-// Simple notification sound (base64)
-const NOTIFICATION_SOUND = "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"; // Placeholder, using a real URL below usually better
+const POLL_INTERVAL = 4000; // أسرع + أخف من 5s
 
-const Notifications = ({ currentUserId }) => {
-    const navigate = useNavigate(); // Initialize hook
+const DEFAULT_AVATAR =
+    "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+
+const Notifications = () => {
+    const navigate = useNavigate();
+
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // Track latest notification ID to avoid playing sound on initial load
-    const lastNotificationIdRef = useRef(null);
-    const audioRef = useRef(new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"));
-
     const dropdownRef = useRef(null);
+    const lastSeenIdRef = useRef(null);
+    const isFirstLoadRef = useRef(true);
 
-    const fetchNotifications = async () => {
+    const audioRef = useRef(
+        new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
+    );
+
+    /* ===============================
+       Fetch Notifications (SMART)
+    =============================== */
+    const fetchNotifications = useCallback(async (silent = false) => {
         try {
+            if (!silent) setLoading(true);
+
             const res = await api.get("/notifications");
-            const data = res.data;
+            const data = res.data || [];
 
-            // count unread
-            const unread = data.filter((n) => !n.isRead).length;
+            // unread count
+            const unread = data.reduce(
+                (acc, n) => (n.isRead ? acc : acc + 1),
+                0
+            );
 
-            // Check for new notifications to play sound
+            // 🔔 Sound logic (only real new notification)
             if (data.length > 0) {
-                const latestId = data[0].id;
-                // If we have a previous ID, and the new latest ID is different, and it's unread
-                if (lastNotificationIdRef.current && lastNotificationIdRef.current !== latestId) {
-                    // Play sound
-                    audioRef.current.play().catch(e => console.log("Audio play failed (interaction required first):", e));
+                const newestId = data[0].id;
+
+                if (
+                    !isFirstLoadRef.current &&
+                    lastSeenIdRef.current &&
+                    newestId !== lastSeenIdRef.current &&
+                    !data[0].isRead
+                ) {
+                    audioRef.current
+                        .play()
+                        .catch(() => { }); // ignore autoplay restriction
                 }
-                lastNotificationIdRef.current = latestId;
+
+                lastSeenIdRef.current = newestId;
             }
+
+            isFirstLoadRef.current = false;
 
             setNotifications(data);
             setUnreadCount(unread);
         } catch (err) {
-            console.error("Failed to fetch notifications", err);
+            console.error("❌ Failed to fetch notifications", err);
         } finally {
             setLoading(false);
         }
-    };
-
-    // ... rest of component
-
-    const respondJoinRequest = async (joinRequestId, status) => {
-        try {
-            await api.patch(`/join-requests/${joinRequestId}/respond`, { status });
-            // Update immediately
-            fetchNotifications();
-        } catch (err) {
-            console.error("Failed to respond to join request", err);
-        }
-    };
-
-    useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, 5000);
-        return () => clearInterval(interval);
     }, []);
 
+    /* ===============================
+       Initial load + Polling
+    =============================== */
     useEffect(() => {
-        const handleClickOutside = (e) => {
+        fetchNotifications();
+
+        const interval = setInterval(() => {
+            // لا نعمل fetch إذا القائمة مفتوحة (تقليل re-render)
+            if (!open) {
+                fetchNotifications(true);
+            }
+        }, POLL_INTERVAL);
+
+        return () => clearInterval(interval);
+    }, [fetchNotifications, open]);
+
+    /* ===============================
+       Close on outside click
+    =============================== */
+    useEffect(() => {
+        const handler = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
                 setOpen(false);
             }
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, []);
 
+    /* ===============================
+       Mark as read (Optimistic)
+    =============================== */
     const markAsRead = async (id) => {
+        setNotifications((prev) =>
+            prev.map((n) =>
+                n.id === id ? { ...n, isRead: true } : n
+            )
+        );
+        setUnreadCount((prev) => Math.max(prev - 1, 0));
+
         try {
-            setNotifications((prev) =>
-                prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-            );
-            setUnreadCount((prev) => Math.max(prev - 1, 0));
             await api.put(`/notifications/${id}/read`);
         } catch (err) {
-            console.error("Failed to mark notification as read", err);
-            fetchNotifications(); // Re-fetch to sync state if error
+            console.error("❌ markAsRead failed", err);
+            fetchNotifications(true); // resync
         }
     };
 
+    /* ===============================
+       Helpers
+    =============================== */
+    const getAvatar = (user) => {
+        if (!user?.avatarUrl) return DEFAULT_AVATAR;
+
+        if (user.avatarUrl.startsWith("http")) {
+            return user.avatarUrl;
+        }
+
+        let baseUrl =
+            import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+        if (baseUrl.endsWith("/api")) {
+            baseUrl = baseUrl.slice(0, -4);
+        }
+
+        return `${baseUrl}/uploads/${user.avatarUrl}`;
+    };
+
+    /* ===============================
+       Render
+    =============================== */
     return (
         <div className="notifications-container" ref={dropdownRef}>
             <button
                 className="notifications-btn"
-                onClick={() => setOpen((p) => !p)}
+                onClick={() => {
+                    setOpen((p) => !p);
+                    if (!open) fetchNotifications(true);
+                }}
             >
                 <Bell size={22} />
                 {unreadCount > 0 && (
-                    <span className="notifications-dot">{unreadCount}</span>
+                    <span className="notifications-dot">
+                        {unreadCount}
+                    </span>
                 )}
             </button>
 
@@ -113,55 +168,35 @@ const Notifications = ({ currentUserId }) => {
                         {loading ? (
                             <div className="notif-loading">Loading...</div>
                         ) : notifications.length === 0 ? (
-                            <div className="notif-empty">No notifications yet</div>
+                            <div className="notif-empty">
+                                No notifications yet
+                            </div>
                         ) : (
                             notifications.map((n) => {
-                                const joinRequest = n.joinRequest;
-                                const user = joinRequest?.user;
-                                const aiInsight = joinRequest?.aiInsight;
-
-                                // Construct robust avatar URL
-                                let avatarSrc = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-                                if (user?.avatarUrl) {
-                                    if (user.avatarUrl.startsWith("http")) {
-                                        avatarSrc = user.avatarUrl;
-                                    } else {
-                                        let baseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-                                        if (baseUrl.endsWith("/api")) baseUrl = baseUrl.slice(0, -4);
-                                        avatarSrc = `${baseUrl}/uploads/${user.avatarUrl}`;
-                                    }
-                                }
+                                const jr = n.joinRequest;
+                                const user = jr?.user;
+                                const ai = jr?.aiInsight;
 
                                 return (
                                     <div
                                         key={n.id}
-                                        className={`notification-item ${n.isRead ? "read" : "unread"}`}
+                                        className={`notification-item ${n.isRead ? "read" : "unread"
+                                            }`}
                                         onClick={() => {
-                                            // Log click data
-                                            console.log("Notification Clicked:", n);
-                                            console.log("JoinRequest:", n.joinRequest);
-
                                             if (!n.isRead) markAsRead(n.id);
 
-                                            const joinRequestId = n.joinRequest?.id;
-                                            const requesterId = n.joinRequest?.userId;
-
-                                            // Redirect to profile
-                                            // Redirect to profile
-                                            if (joinRequestId && requesterId) {
-                                                console.log(`Navigating to profile/${requesterId}?joinRequestId=${joinRequestId}`);
-                                                navigate(`/profile/${requesterId}?joinRequestId=${joinRequestId}`);
-                                                setOpen(false); // Close dropdown
+                                            if (jr?.id && jr?.userId) {
+                                                navigate(
+                                                    `/profile/${jr.userId}?joinRequestId=${jr.id}`
+                                                );
                                             } else if (n.projectId) {
-                                                // Redirect to project page for other notifications (e.g. Accepted/Rejected/Chat)
-                                                console.log(`Navigating to projects/${n.projectId}`);
-                                                navigate(`/projects/${n.projectId}`);
-                                                setOpen(false);
-                                            } else {
-                                                console.warn("Missing joinRequestId or requesterId, cannot redirect");
+                                                navigate(
+                                                    `/projects/${n.projectId}`
+                                                );
                                             }
+
+                                            setOpen(false);
                                         }}
-                                        style={{ cursor: "pointer" }}
                                     >
                                         <div className="notif-content">
                                             <strong>{n.title}</strong>
@@ -169,44 +204,30 @@ const Notifications = ({ currentUserId }) => {
 
                                             {user && (
                                                 <div className="notif-user-info">
-                                                    <div>
-                                                        <img
-                                                            src={avatarSrc}
-                                                            alt={user.name}
-                                                            className="notif-avatar"
-                                                        />
-                                                        <span>{user.name}</span>
-                                                    </div>
-                                                    {user.skills && (
-                                                        <div className="notif-skills">
-                                                            {Array.isArray(user.skills)
-                                                                ? user.skills.join(", ")
-                                                                : String(user.skills).replace(/[\[\]"]/g, "")}
-                                                        </div>
-                                                    )}
+                                                    <img
+                                                        src={getAvatar(user)}
+                                                        alt={user.name}
+                                                        className="notif-avatar"
+                                                    />
+                                                    <span>{user.name}</span>
                                                 </div>
                                             )}
 
-                                            {aiInsight && (
+                                            {ai && (
                                                 <div className="notif-ai-score">
-                                                    Match Score: {aiInsight.score}%
+                                                    Match Score: {ai.score}%
                                                 </div>
                                             )}
 
                                             <span className="notif-time">
-                                                {new Date(n.createdAt).toLocaleString()}
+                                                {new Date(
+                                                    n.createdAt
+                                                ).toLocaleString()}
                                             </span>
                                         </div>
 
                                         {!n.isRead && (
                                             <span className="notif-indicator" />
-                                        )}
-
-                                        {/* Visual hint for clickability if it's a join request */}
-                                        {joinRequest && (
-                                            <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#a855f7" }}>
-                                                Click to view request details
-                                            </div>
                                         )}
                                     </div>
                                 );
