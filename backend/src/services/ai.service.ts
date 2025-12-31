@@ -1,5 +1,4 @@
 import { GoogleAuth } from "google-auth-library";
-import path from "path";
 import "dotenv/config";
 import prisma from "./prisma";
 import { Prisma } from "@prisma/client";
@@ -8,21 +7,20 @@ import { Prisma } from "@prisma/client";
    Google Gemini Initialization
 ================================ */
 
-const KEY_FILE_PATH = path.join(
-    process.cwd(),
-    "keys",
-    "gen-lang-client-0096271690-dfd82b22ff42.json"
-);
+console.log("🔹 AI Service initialized using GOOGLE_CREDENTIALS env variable");
 
-console.log(`🔹 AI Service initialized with key: ${KEY_FILE_PATH}`);
+if (!process.env.GOOGLE_CREDENTIALS) {
+    throw new Error("❌ GOOGLE_CREDENTIALS environment variable is not set");
+}
 
 const auth = new GoogleAuth({
-    keyFile: KEY_FILE_PATH,
+    credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
     scopes: [
         "https://www.googleapis.com/auth/generative-language",
         "https://www.googleapis.com/auth/cloud-platform",
     ],
 });
+
 
 /* ===============================
    Types
