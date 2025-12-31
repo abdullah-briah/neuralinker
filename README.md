@@ -122,15 +122,6 @@ Every user can be both:
 
 ---
 
-## 📦 Installation
-
-git clone https://github.com/your-username/neuralinker.git
-cd neuralinker
-npm install
-npm run dev
-
----
-
 ## 📄 License
 
 This project is developed for educational and demonstration purposes.
