@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,           // مثال: smtp.gmail.com
     port: Number(process.env.EMAIL_PORT),   // مثال: 465
-    secure: true,                           // true إذا كان المنفذ 465
+    secure: false,                           // true إذا كان المنفذ 465
     auth: {
         user: process.env.EMAIL_USER,       // بريدك الإلكتروني
         pass: process.env.EMAIL_PASS,       // App Password من Gmail أو أي SMTP آخر
