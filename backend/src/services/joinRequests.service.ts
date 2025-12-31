@@ -94,7 +94,7 @@ export const createRequest = async (
             },
             {
                 title: joinRequest.project.title,
-                description: joinRequest.project.description,
+                shortDescription: joinRequest.project.shortDescription,
                 category: joinRequest.project.category,
                 skills: projectSkills,
             }
