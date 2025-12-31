@@ -285,3 +285,38 @@ export const analyzeAndSaveInsight = async (
         },
     });
 };
+
+
+/* ===============================
+   Backward Compatibility Helpers
+================================ */
+
+/**
+ * Used by ai.controller.ts
+ * Keeps old API stable
+ */
+export const createInsight = async (
+    joinRequestId: string,
+    result: MatchResult
+) => {
+    return prisma.aIInsight.create({
+        data: {
+            type: "match_compatibility",
+            joinRequestId,
+            score: result.score,
+            result: result as unknown as Prisma.InputJsonValue,
+        },
+    });
+};
+
+/**
+ * Used by ai.controller.ts
+ */
+export const getInsight = async (
+    joinRequestId: string
+) => {
+    return prisma.aIInsight.findUnique({
+        where: { joinRequestId },
+    });
+};
+
