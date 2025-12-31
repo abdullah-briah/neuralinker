@@ -27,7 +27,7 @@ transporter.verify((error, success) => {
  */
 export const sendVerificationEmail = async (email: string, token: string) => {
     try {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://neuralinker-sadl.vercel.app';
         const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
         const info = await transporter.sendMail({
