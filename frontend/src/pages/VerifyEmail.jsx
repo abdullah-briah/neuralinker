@@ -4,7 +4,8 @@ import api from '../api/axios';
 
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    const tokenParam = searchParams.get('token');
+    const token = tokenParam ? decodeURIComponent(tokenParam) : null; // فك التشفير للتوافق
     const [status, setStatus] = useState('verifying'); // verifying, success, error
     const [message, setMessage] = useState('Verifying your email...');
     const [isResending, setIsResending] = useState(false);
@@ -20,13 +21,17 @@ const VerifyEmail = () => {
 
         const verify = async () => {
             try {
-                await api.get(`/auth/verify-email?token=${token}`);
+                await api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`); // تشفير token عند الإرسال
                 setStatus('success');
-                setMessage('Email verified successfully!');
-                setTimeout(() => navigate('/login'), 3000); // Auto redirect
-            } catch (error) {
+                setMessage('Email verified successfully! Redirecting to login...');
+                setTimeout(() => navigate('/login'), 3000); // إعادة التوجيه تلقائياً بعد 3 ثوانٍ
+            } catch (err) {
+                console.error('❌ VerifyEmail Error:', err);
                 setStatus('error');
-                setMessage(error.response?.data?.message || 'Verification failed. Token may be invalid or expired.');
+                setMessage(
+                    err.response?.data?.message ||
+                    'Verification failed. Token may be invalid or expired.'
+                );
             }
         };
 
@@ -35,12 +40,14 @@ const VerifyEmail = () => {
 
     const handleResend = async (e) => {
         e.preventDefault();
+        if (!resendEmail) return;
         setIsResending(true);
         try {
             await api.post('/auth/resend-verification', { email: resendEmail });
             alert('Verification email resent! Check your inbox.');
-        } catch (error) {
-            alert(error.response?.data?.message || 'Failed to resend email.');
+        } catch (err) {
+            console.error('❌ Resend Email Error:', err);
+            alert(err.response?.data?.message || 'Failed to resend email.');
         } finally {
             setIsResending(false);
         }
@@ -51,17 +58,27 @@ const VerifyEmail = () => {
             <div className="auth-card">
                 <h2 className="auth-title">Email Verification</h2>
 
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: status === 'error' ? '#ef4444' : '#10b981' }}>
+                <div
+                    style={{
+                        textAlign: 'center',
+                        marginBottom: '1.5rem',
+                        color: status === 'error' ? '#ef4444' : '#10b981',
+                    }}
+                >
                     {message}
                 </div>
 
                 {status === 'success' && (
-                    <p style={{ textAlign: 'center', color: '#94a3b8' }}>Redirecting to login...</p>
+                    <p style={{ textAlign: 'center', color: '#94a3b8' }}>
+                        Redirecting to login...
+                    </p>
                 )}
 
                 {(status === 'error' || !token) && (
                     <div style={{ marginTop: '2rem', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>Resend Verification Email</h3>
+                        <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>
+                            Resend Verification Email
+                        </h3>
                         <form onSubmit={handleResend}>
                             <div className="form-group">
                                 <label className="form-label">Enter your email address</label>

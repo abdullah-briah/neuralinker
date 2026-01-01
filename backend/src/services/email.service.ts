@@ -4,7 +4,7 @@ import sgMail from "@sendgrid/mail";
 // ===== إعداد المتغيرات من البيئة =====
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "service@neuralinker.com";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://neuralinker-sadl.vercel.app";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // التأكد من وجود مفتاح SendGrid
 if (!SENDGRID_API_KEY) {
@@ -22,10 +22,11 @@ sgMail.setApiKey(SENDGRID_API_KEY);
  */
 export const sendVerificationEmail = async (email: string, token: string): Promise<boolean> => {
     try {
-        // رابط التفعيل
-        const verificationLink = `${FRONTEND_URL}/verify-email?token=${token}`;
+        // 🔑 تشفير الـ token لمنع أي تشوه عند النقل عبر الرابط
+        const verificationLink = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
 
         console.log(`🔄 Sending verification email to: ${email}`);
+        console.log(`🔗 Verification link: ${verificationLink}`);
 
         // تكوين الرسالة
         const msg = {
@@ -49,9 +50,7 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
             `,
         };
 
-        // إرسال الرسالة
         const response = await sgMail.send(msg);
-
         console.log(`📧 Verification email sent to ${email} (Status: ${response[0].statusCode})`);
         return true;
     } catch (error: any) {
