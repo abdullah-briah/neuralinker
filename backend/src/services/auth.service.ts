@@ -11,44 +11,44 @@ if (!JWT_SECRET) {
 
 /**
  * ===============================
- * Register
+ * Register - Optimized
  * ===============================
  */
 export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
-    // Check if email is already registered
+    // 1️⃣ تحقق إذا البريد موجود
     const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
     });
+    if (existingUser) throw new Error('Email is already registered');
 
-    if (existingUser) {
-        throw new Error('Email is already registered');
-    }
-
-    // Hash the password
+    // 2️⃣ Hash كلمة المرور بسرعة وأمان
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Create user in DB
+    // 3️⃣ إنشاء المستخدم في قاعدة البيانات
     const user = await prisma.user.create({
         data: {
             ...data,
             password: hashedPassword,
-            isVerified: false, // Must exist in schema
+            isVerified: false,
         },
     });
 
-    // Generate Verification Token
+    // 4️⃣ إنشاء رمز التحقق
     const verificationToken = jwt.sign(
         { id: user.id },
         JWT_SECRET,
         { expiresIn: '1d' }
     );
 
-    // Send Verification Email
-    const emailSent = await emailService.sendVerificationEmail(user.email, verificationToken);
-    if (!emailSent) {
-        console.warn(`Failed to send verification email to ${user.email}`);
-    }
+    // 5️⃣ إرسال البريد في الخلفية بدون انتظار (fire & forget)
+    emailService.sendVerificationEmail(user.email, verificationToken)
+        .then(sent => {
+            if (!sent) console.warn(`⚠️ Failed to send verification email to ${user.email}`);
+            else console.log(`✅ Verification email sent to ${user.email}`);
+        })
+        .catch(err => console.error('Error sending verification email:', err));
 
+    // 6️⃣ إعادة المستخدم مباشرة → response سريع جداً
     return user;
 };
 
@@ -57,17 +57,13 @@ export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
  * Login
  * ===============================
  */
-export const login = async (
-    email: string,
-    password: string
-): Promise<{ token: string; user: User }> => {
+export const login = async (email: string, password: string): Promise<{ token: string; user: User }> => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error('Invalid credentials');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error('Invalid credentials');
 
-    // Force email verification
     if (!user.isVerified) throw new Error('Please verify your email before logging in.');
 
     const token = jwt.sign(
@@ -119,8 +115,10 @@ export const resendVerification = async (email: string): Promise<void> => {
         { expiresIn: '1d' }
     );
 
-    const emailSent = await emailService.sendVerificationEmail(user.email, verificationToken);
-    if (!emailSent) {
-        throw new Error(`Failed to resend verification email to ${email}`);
-    }
+    // إرسال البريد في الخلفية أيضاً
+    emailService.sendVerificationEmail(user.email, verificationToken)
+        .then(sent => {
+            if (!sent) throw new Error(`Failed to resend verification email to ${email}`);
+        })
+        .catch(console.error);
 };
