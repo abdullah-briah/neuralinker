@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import '../styles/Modal.css'; // Use shared modal styles
+import '../styles/Modal.css'; // استخدم ستايل المشترك للـ modal
 import api from '../api/axios';
 
 const Register = () => {
@@ -9,17 +9,26 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(false); // ← Loader state
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
+
+        // DEBUG: تأكد من البيانات المرسلة
+        console.log('Sending registration data:', { name, email, password });
 
         try {
-            await api.post('/auth/register', { name, email, password });
+            const res = await api.post('/auth/register', { name, email, password });
+            console.log('Server response:', res.data);
             setSuccess(true);
         } catch (err) {
+            console.error('Axios Error:', err.response?.data);
             setError(err.response?.data?.message || 'Failed to register');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -29,11 +38,14 @@ const Register = () => {
                 <div className="auth-card">
                     <h2 className="auth-title" style={{ color: '#10b981' }}>Registration Successful!</h2>
                     <p style={{ textAlign: 'center', color: '#f8fafc', marginBottom: '1.5rem' }}>
-                        A verification email has been sent to <strong>{email}</strong>.
-                        <br />
+                        A verification email has been sent to <strong>{email}</strong>.<br />
                         Please check your inbox to activate your account.
                     </p>
-                    <Link to="/login" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                    <Link
+                        to="/login"
+                        className="btn btn-primary"
+                        style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                    >
                         Go to Login
                     </Link>
                 </div>
@@ -58,7 +70,13 @@ const Register = () => {
             <div className="modal-content" style={{ animation: 'none' }}>
                 <h2 className="modal-title">Join Neuralinker</h2>
                 <p className="modal-subtitle">Connect your mind to the network.</p>
-                {error && <div className="error-msg" style={{ color: '#ef4444', textAlign: 'center', marginBottom: '1rem' }}>{error}</div>}
+
+                {error && (
+                    <div className="error-msg" style={{ color: '#ef4444', textAlign: 'center', marginBottom: '1rem' }}>
+                        {error}
+                    </div>
+                )}
+
                 <form className="modal-form" onSubmit={handleSubmit}>
                     <div className="form-group">
                         <input
@@ -87,10 +105,17 @@ const Register = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="modal-submit-btn">
-                        Create Account
+
+                    <button
+                        type="submit"
+                        className="modal-submit-btn"
+                        disabled={loading} // ← تعطيل الزر أثناء الانتظار
+                        style={{ opacity: loading ? 0.6 : 1 }}
+                    >
+                        {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
+
                 <div className="modal-footer">
                     Already a member? <Link to="/login" className="modal-link">Log In</Link>
                 </div>
