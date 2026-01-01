@@ -3,6 +3,9 @@
 Neuralinker is a collaborative project-based platform that connects users through shared projects, smart join requests, and AI-assisted decision-making.
 The platform focuses on building meaningful teams, not random connections.
 
+## 🌐 Live Website
+[🚀 Visit Neuralinker](neuralinker-sadl.vercel.app)
+
 ---
 
 ## 🚀 Overview
