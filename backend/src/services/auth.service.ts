@@ -40,13 +40,14 @@ export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
         { expiresIn: '1d' }
     );
 
-    // 5️⃣ إرسال البريد في الخلفية بدون انتظار (fire & forget)
-    emailService.sendVerificationEmail(user.email, verificationToken)
-        .then(sent => {
-            if (!sent) console.warn(`⚠️ Failed to send verification email to ${user.email}`);
-            else console.log(`✅ Verification email sent to ${user.email}`);
-        })
-        .catch(err => console.error('Error sending verification email:', err));
+    // 5️⃣ إرسال البريد مع انتظار التنفيذ لضمان الإرسال أو معرفة الخطأ
+    try {
+        const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
+        if (!sent) console.warn(`⚠️ Failed to send verification email to ${user.email}`);
+        else console.log(`✅ Verification email sent to ${user.email}`);
+    } catch (err) {
+        console.error('❌ Error sending verification email:', err);
+    }
 
     // 6️⃣ إعادة المستخدم مباشرة → response سريع جداً
     return user;
@@ -115,10 +116,12 @@ export const resendVerification = async (email: string): Promise<void> => {
         { expiresIn: '1d' }
     );
 
-    // إرسال البريد في الخلفية أيضاً
-    emailService.sendVerificationEmail(user.email, verificationToken)
-        .then(sent => {
-            if (!sent) throw new Error(`Failed to resend verification email to ${email}`);
-        })
-        .catch(console.error);
+    // إرسال البريد مع انتظار التنفيذ
+    try {
+        const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
+        if (!sent) throw new Error(`Failed to resend verification email to ${email}`);
+        else console.log(`✅ Resent verification email to ${user.email}`);
+    } catch (err) {
+        console.error('❌ Error resending verification email:', err);
+    }
 };

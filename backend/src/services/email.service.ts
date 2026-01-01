@@ -1,16 +1,17 @@
 import nodemailer from "nodemailer";
 
+// إنشاء transporter للبريد
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
+    host: process.env.EMAIL_HOST || "smtp.sendgrid.net",
     port: Number(process.env.EMAIL_PORT) || 587,
     secure: Number(process.env.EMAIL_PORT) === 465, // true للـ 465، false للـ 587
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // عند SendGrid دائماً "apikey"
+        pass: process.env.EMAIL_PASS, // مفتاح API من SendGrid
     },
 });
 
-// تحقق من اتصال SMTP بشكل async
+// تحقق من اتصال SMTP عند بدء السيرفر
 (async () => {
     try {
         await transporter.verify();
@@ -31,7 +32,7 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
         const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
         const info = await transporter.sendMail({
-            from: `"Neuralinker" <neuralinkerservice@gmail.com>`,
+            from: `"Neuralinker" <service@neuralinker.com>`, // البريد الموثق في SendGrid
             to: email,
             subject: "✅ Verify your Neuralinker account",
             html: `
@@ -39,6 +40,10 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
                 <p>Please verify your email by clicking the link below:</p>
                 <a href="${verificationLink}" target="_blank" style="padding:10px 20px; background:#10b981; color:white; text-decoration:none; border-radius:5px;">Verify Email</a>
                 <p>If you did not register, please ignore this email.</p>
+                <hr />
+                <p style="font-size:12px; color:#999;">
+                    Neuralinker Inc., 123 Neural Lane, Neural City, NC 12345
+                </p>
             `,
         });
 
