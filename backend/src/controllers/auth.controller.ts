@@ -3,17 +3,25 @@ import * as authService from '../services/auth.service';
 
 /**
  * ===============================
- * Register Controller - Fast & Optimized
+ * Register Controller
  * ===============================
  */
 export const register = async (req: Request, res: Response) => {
     try {
-        const user = await authService.register(req.body);
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ success: false, message: 'Name, email and password are required.' });
+        }
 
-        // 201 Created مباشرة → لا ينتظر البريد
+        const user = await authService.register({ name, email, password });
+
+        console.log(`✅ User registered: ${user.email}`);
+
+        // 201 Created → لا ينتظر البريد
         res.status(201).json({
+            success: true,
             message: 'User registered successfully!',
-            user: {
+            data: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
@@ -22,10 +30,9 @@ export const register = async (req: Request, res: Response) => {
             }
         });
 
-        // البريد يُرسل في الخلفية بالفعل من auth.service
     } catch (error: any) {
-        console.error('Register Error:', error.message);
-        res.status(400).json({ message: error.message });
+        console.error('❌ Register Error:', error.stack || error);
+        res.status(400).json({ success: false, message: error.message || 'Registration failed' });
     }
 };
 
@@ -37,22 +44,32 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Email and password are required.' });
+        }
+
         const result = await authService.login(email, password);
 
+        console.log(`🔑 User logged in: ${result.user.email}`);
+
         res.status(200).json({
+            success: true,
             message: 'Login successful!',
-            token: result.token,
-            user: {
-                id: result.user.id,
-                name: result.user.name,
-                email: result.user.email,
-                isVerified: result.user.isVerified,
-                role: result.user.role,
+            data: {
+                token: result.token,
+                user: {
+                    id: result.user.id,
+                    name: result.user.name,
+                    email: result.user.email,
+                    isVerified: result.user.isVerified,
+                    role: result.user.role,
+                }
             }
         });
+
     } catch (error: any) {
-        console.error('Login Error:', error.message);
-        res.status(401).json({ message: error.message });
+        console.error('❌ Login Error:', error.stack || error);
+        res.status(401).json({ success: false, message: error.message || 'Login failed' });
     }
 };
 
@@ -68,10 +85,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
         await authService.verifyEmail(token);
 
-        res.status(200).json({ message: 'Email verified successfully! You can now login.' });
+        console.log(`✅ Email verified via token: ${token}`);
+
+        res.status(200).json({ success: true, message: 'Email verified successfully! You can now login.' });
     } catch (error: any) {
-        console.error('Verify Email Error:', error.message);
-        res.status(400).json({ message: error.message });
+        console.error('❌ Verify Email Error:', error.stack || error);
+        res.status(400).json({ success: false, message: error.message || 'Email verification failed' });
     }
 };
 
@@ -83,11 +102,15 @@ export const verifyEmail = async (req: Request, res: Response) => {
 export const resendVerification = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
+        if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
         await authService.resendVerification(email);
 
-        res.status(200).json({ message: 'Verification email resent successfully.' });
+        console.log(`🔄 Verification email resent to: ${email}`);
+
+        res.status(200).json({ success: true, message: 'Verification email resent successfully.' });
     } catch (error: any) {
-        console.error('Resend Verification Error:', error.message);
-        res.status(400).json({ message: error.message });
+        console.error('❌ Resend Verification Error:', error.stack || error);
+        res.status(400).json({ success: false, message: error.message || 'Resending verification failed' });
     }
 };
