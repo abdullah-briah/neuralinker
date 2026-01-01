@@ -11,7 +11,7 @@ if (!JWT_SECRET) {
 
 /**
  * ===============================
- * Register - Full Optimized
+ * Register - Fast & Background Email
  * ===============================
  */
 export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
@@ -40,19 +40,19 @@ export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
         { expiresIn: '1d' }
     );
 
-    // 5️⃣ إرسال البريد مع انتظار التنفيذ للتأكد من نجاح الإرسال
-    try {
-        console.log(`🔄 Sending verification email to ${user.email}...`);
-        const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
-        if (!sent) throw new Error(`⚠️ Failed to send verification email to ${user.email}`);
-        console.log(`✅ Verification email sent to ${user.email}`);
-    } catch (err: any) {
-        console.error('❌ Error sending verification email:', err.message || err);
-        // يمكنك هنا اختيار إرجاع خطأ للـ frontend أو السماح للتسجيل بالنجاح مع تحذير
-        // throw new Error("Registration failed: could not send verification email");
-    }
+    // 5️⃣ إرسال البريد في الخلفية بدون انتظار
+    setImmediate(async () => {
+        try {
+            console.log(`🔄 Sending verification email to ${user.email} in background...`);
+            const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
+            if (!sent) console.warn(`⚠️ Could not send verification email to ${user.email}`);
+            else console.log(`✅ Verification email sent to ${user.email}`);
+        } catch (err: any) {
+            console.error('❌ Background email sending error:', err.message || err);
+        }
+    });
 
-    // 6️⃣ إعادة المستخدم
+    // 6️⃣ إعادة المستخدم فورًا → سريع جدًا
     return user;
 };
 
@@ -119,14 +119,15 @@ export const resendVerification = async (email: string): Promise<void> => {
         { expiresIn: '1d' }
     );
 
-    // إرسال البريد مع انتظار التنفيذ
-    try {
-        console.log(`🔄 Resending verification email to ${user.email}...`);
-        const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
-        if (!sent) throw new Error(`⚠️ Failed to resend verification email to ${email}`);
-        console.log(`✅ Resent verification email to ${user.email}`);
-    } catch (err: any) {
-        console.error('❌ Error resending verification email:', err.message || err);
-        throw err; // مهم لإظهار الخطأ على الـ frontend
-    }
+    // إرسال البريد في الخلفية
+    setImmediate(async () => {
+        try {
+            console.log(`🔄 Resending verification email to ${user.email} in background...`);
+            const sent = await emailService.sendVerificationEmail(user.email, verificationToken);
+            if (!sent) console.warn(`⚠️ Could not resend verification email to ${user.email}`);
+            else console.log(`✅ Resent verification email to ${user.email}`);
+        } catch (err: any) {
+            console.error('❌ Background email resend error:', err.message || err);
+        }
+    });
 };

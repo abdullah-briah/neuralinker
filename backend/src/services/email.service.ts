@@ -1,26 +1,8 @@
-import nodemailer from "nodemailer";
+// src/services/email.service.ts
+import sgMail from '@sendgrid/mail';
 
-// إنشاء transporter للبريد
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.sendgrid.net",
-    port: Number(process.env.EMAIL_PORT) || 587,
-    secure: Number(process.env.EMAIL_PORT) === 465, // true للـ 465، false للـ 587
-    auth: {
-        user: process.env.EMAIL_USER, // عند SendGrid دائماً "apikey"
-        pass: process.env.EMAIL_PASS, // مفتاح API من SendGrid
-    },
-});
-
-// تحقق من اتصال SMTP عند بدء السيرفر
-(async () => {
-    try {
-        console.log("🔄 Verifying SMTP connection...");
-        const success = await transporter.verify();
-        console.log("✅ SMTP connection successful:", success);
-    } catch (err: any) {
-        console.error("❌ SMTP connection failed:", err);
-    }
-})();
+// ضبط SendGrid API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 /**
  * إرسال رسالة التفعيل
@@ -34,10 +16,10 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
 
         console.log(`🔄 Sending verification email to: ${email}`);
 
-        const info = await transporter.sendMail({
-            from: `"Neuralinker" <${process.env.EMAIL_FROM}>`, // استخدم Env Variable الآن
+        const msg = {
             to: email,
-            subject: "✅ Verify your Neuralinker account",
+            from: process.env.EMAIL_FROM!, // البريد الموثق في SendGrid
+            subject: '✅ Verify your Neuralinker account',
             html: `
                 <h2>Welcome to Neuralinker!</h2>
                 <p>Please verify your email by clicking the link below:</p>
@@ -47,10 +29,12 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
                 <p style="font-size:12px; color:#999;">
                     Neuralinker Inc., 123 Neural Lane, Neural City, NC 12345
                 </p>
-            `,
-        });
+            `
+        };
 
-        console.log(`📧 Verification email sent to ${email} (Message ID: ${info.messageId})`);
+        await sgMail.send(msg);
+
+        console.log(`📧 Verification email sent to ${email}`);
         return true;
     } catch (error: any) {
         console.error(`❌ Failed to send verification email to ${email}:`, error.message);
