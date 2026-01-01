@@ -35,7 +35,7 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
         console.log(`🔄 Sending verification email to: ${email}`);
 
         const info = await transporter.sendMail({
-            from: `"Neuralinker" <neuralinkerservice@gmail.com>`, // البريد الموثق في SendGrid
+            from: `"Neuralinker" <${process.env.EMAIL_FROM}>`, // استخدم Env Variable الآن
             to: email,
             subject: "✅ Verify your Neuralinker account",
             html: `

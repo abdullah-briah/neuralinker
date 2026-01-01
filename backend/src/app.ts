@@ -20,6 +20,7 @@ const app = express();
 // ===== CORS Configuration =====
 const corsOptions = {
     origin: [
+        //"http://localhost:5173",
         "https://neuralinker-sadl.vercel.app",
         "https://neuralinker-sadl-9ok0y5443-abdullah-ahmed-briahs-projects.vercel.app",
         "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app",
