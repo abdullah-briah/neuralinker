@@ -31,7 +31,7 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
         const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
         const info = await transporter.sendMail({
-            from: `"Neuralinker" <${process.env.EMAIL_USER}>`,
+            from: `"Neuralinker" <neuralinkerservice@gmail.com>`,
             to: email,
             subject: "✅ Verify your Neuralinker account",
             html: `
