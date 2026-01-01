@@ -18,11 +18,9 @@ import { UPLOADS_DIR } from './config/constants';
 const app = express();
 
 // ===== CORS Configuration =====
-// للسيرفر المحلي + روابط ال Preview + الرابط الرسمي
 const corsOptions = {
     origin: [
-        //'http://localhost:5173', 
-        "https://neuralinker-sadl.vercel.app", // الرابط الرسمي
+        "https://neuralinker-sadl.vercel.app",
         "https://neuralinker-sadl-9ok0y5443-abdullah-ahmed-briahs-projects.vercel.app",
         "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app",
         "https://neuralinker-sadl-j0sq7uh5r-abdullah-ahmed-briahs-projects.vercel.app",
@@ -40,7 +38,12 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Serve uploaded files
+// ===== Health Endpoint =====
+app.get('/api/health', (req, res) => {
+    res.json({ status: "ok" });
+});
+
+// ===== Serve uploaded files =====
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ===== Routes =====
@@ -57,5 +60,6 @@ app.use('/api/admin', adminRoutes);
 app.get('/', (req, res) => {
     res.send('Neuralinker Backend is running');
 });
+
 
 export default app;
