@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
-import fs from 'fs';
 
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -18,32 +17,33 @@ import { UPLOADS_DIR } from './config/constants';
 
 const app = express();
 
-// CORS Configuration
+// ===== CORS Configuration =====
+// للسيرفر المحلي + روابط ال Preview + الرابط الرسمي
 const corsOptions = {
     origin: [
-        "https://neuralinker-sadl.vercel.app", // الدومين الرئيسي
+        //'http://localhost:5173', 
+        "https://neuralinker-sadl.vercel.app", // الرابط الرسمي
         "https://neuralinker-sadl-9ok0y5443-abdullah-ahmed-briahs-projects.vercel.app",
-        "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app", // Preview
-        "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app" // Preview
+        "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app",
+        "https://neuralinker-sadl-j0sq7uh5r-abdullah-ahmed-briahs-projects.vercel.app",
+        "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-    optionsSuccessStatus: 200 // لتجنب مشاكل بعض المتصفحات مع preflight
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// Middlewares
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
+// ===== Middlewares =====
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Serve uploaded images
+// Serve uploaded files
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// Routes
+// ===== Routes =====
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
@@ -53,7 +53,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Root endpoint
+// ===== Root endpoint =====
 app.get('/', (req, res) => {
     res.send('Neuralinker Backend is running');
 });

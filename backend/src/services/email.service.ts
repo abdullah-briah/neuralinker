@@ -14,10 +14,11 @@ const transporter = nodemailer.createTransport({
 // تحقق من اتصال SMTP عند بدء السيرفر
 (async () => {
     try {
-        await transporter.verify();
-        console.log("✅ SMTP connection successful. Ready to send emails.");
+        console.log("🔄 Verifying SMTP connection...");
+        const success = await transporter.verify();
+        console.log("✅ SMTP connection successful:", success);
     } catch (err: any) {
-        console.error("❌ SMTP connection failed:", err.message);
+        console.error("❌ SMTP connection failed:", err);
     }
 })();
 
@@ -31,8 +32,10 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
         const frontendUrl = process.env.FRONTEND_URL || 'https://neuralinker-sadl.vercel.app';
         const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
+        console.log(`🔄 Sending verification email to: ${email}`);
+
         const info = await transporter.sendMail({
-            from: `"Neuralinker" <service@neuralinker.com>`, // البريد الموثق في SendGrid
+            from: `"Neuralinker" <neuralinkerservice@gmail.com>`, // البريد الموثق في SendGrid
             to: email,
             subject: "✅ Verify your Neuralinker account",
             html: `

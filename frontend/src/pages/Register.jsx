@@ -39,7 +39,8 @@ const Register = () => {
                     <h2 className="auth-title" style={{ color: '#10b981' }}>Registration Successful!</h2>
                     <p style={{ textAlign: 'center', color: '#f8fafc', marginBottom: '1.5rem' }}>
                         A verification email has been sent to <strong>{email}</strong>.<br />
-                        Please check your inbox to activate your account.
+                        Please check your inbox to activate your account. <br />
+                        ⚠️ <em>If you don't see it, check your Spam / Promotions folder.</em>
                     </p>
                     <Link
                         to="/login"
@@ -52,6 +53,7 @@ const Register = () => {
             </div>
         );
     }
+
 
     return (
         <div style={{
