@@ -32,3 +32,4 @@ build/
 
 backend/keys/
 scripts/
+backend/uploads/
