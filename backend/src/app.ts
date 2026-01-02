@@ -19,14 +19,10 @@ const app = express();
 
 // ===== CORS Configuration =====
 const corsOptions = {
-    origin: [
-        "http://localhost:5173",
-        "https://neuralinker-sadl.vercel.app",
-        "https://neuralinker-sadl-9ok0y5443-abdullah-ahmed-briahs-projects.vercel.app",
-        "https://neuralinker-sadl-git-main-abdullah-ahmed-briahs-projects.vercel.app",
-        "https://neuralinker-sadl-j0sq7uh5r-abdullah-ahmed-briahs-projects.vercel.app",
-        "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app"
-    ],
+    origin: (origin, callback) => {
+        // Allow all origins for now to fix access issues
+        callback(null, true);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
     optionsSuccessStatus: 200
