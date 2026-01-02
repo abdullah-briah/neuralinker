@@ -41,7 +41,9 @@ const Modal = ({ isOpen, onClose, mode, onSwitchMode, onSubmit }) => {
                     <h2 className="modal-title" style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem' }}>Success!</h2>
                     <p className="modal-subtitle" style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#e2e8f0' }}>Registration Successful</p>
                     <p style={{ color: '#94a3b8', lineHeight: '1.6', marginBottom: '2rem' }}>
-                        A verification email has been sent to your inbox.<br />Please verify your account to unlock full access.
+                        A verification email has been sent to your inbox.<br />
+                        Please verify your account to activate it.<br />
+                        ⚠️ <em>If you don't see it, check your Spam / Promotions folder.</em>
                     </p>
 
                     <button

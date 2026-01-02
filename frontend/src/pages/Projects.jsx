@@ -52,13 +52,35 @@ const Projects = () => {
         if (!user) return;
         setJoining(prev => ({ ...prev, [projectId]: true }));
 
+        // Optimistic Update: Immediately show "Pending"
+        setProjects(prevProjects => prevProjects.map(p => {
+            if (p.id === projectId) {
+                return {
+                    ...p,
+                    joinRequests: [...(p.joinRequests || []), { userId: user.id, status: 'pending' }]
+                };
+            }
+            return p;
+        }));
+
         try {
             await api.post(`/projects/${projectId}/join`);
             addToast('Join request sent successfully!', 'success');
         } catch (err) {
             console.error('Error sending join request:', err);
             const msg = err.response?.data?.message || 'Failed to send join request.';
-            // Specifically check for "already joined" message
+
+            // Revert Optimistic Update on Error
+            setProjects(prevProjects => prevProjects.map(p => {
+                if (p.id === projectId) {
+                    return {
+                        ...p,
+                        joinRequests: (p.joinRequests || []).filter(r => r.userId !== user.id)
+                    };
+                }
+                return p;
+            }));
+
             if (msg.includes("already joined") || msg.includes("requested to join")) {
                 addToast(msg, 'info');
             } else {
@@ -173,6 +195,10 @@ const Projects = () => {
                                     startDate={project.startDate ? new Date(project.startDate).toLocaleDateString() : 'TBD'}
                                     ownerId={project.owner?.id}
                                     currentUserId={user?.id}
+                                    // Status
+                                    isMember={project.members?.length > 0}
+                                    isPending={project.joinRequests?.length > 0}
+                                    // Actions
                                     onJoin={() => handleJoin(project.id)}
                                     onEdit={() => handleEdit(project)}
                                     onDelete={() => handleDeleteClick(project.id)}

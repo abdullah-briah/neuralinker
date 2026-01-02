@@ -27,7 +27,7 @@ const corsOptions = {
         "https://neuralinker-sadl-j0sq7uh5r-abdullah-ahmed-briahs-projects.vercel.app",
         "https://neuralinker-sadl-qh0oeh8sb-abdullah-ahmed-briahs-projects.vercel.app"
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
     optionsSuccessStatus: 200
 };

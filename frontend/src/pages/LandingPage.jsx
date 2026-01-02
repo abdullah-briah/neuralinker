@@ -39,9 +39,16 @@ const LandingPage = () => {
             if (modalMode === 'login') {
                 // Login Logic
                 const response = await api.post('/auth/login', { email, password });
-                login(response.data.token); // Save token to context/localStorage
+                const { token, user } = response.data.data; // Correct destructuring
+                login(token, user); // Save token and user to context
                 setIsModalOpen(false);
-                navigate('/dashboard'); // Direct access to dashboard
+
+                // Role-based redirection
+                if (user.role === 'admin') {
+                    navigate('/admin/dashboard');
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
                 // Registration Logic
                 await api.post('/auth/register', { name, email, password });

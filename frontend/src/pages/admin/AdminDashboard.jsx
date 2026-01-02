@@ -210,33 +210,7 @@ const AdminDashboard = () => {
                 ))}
             </div>
 
-            {/* Quick Actions (Management Sections) */}
-            <div style={{ marginBottom: '2.5rem' }}>
-                <h3 className="chart-title">Quick Actions</h3>
-                <div className="stats-grid">
-                    <ManagementCard
-                        title="Users Management"
-                        description="View profiles, manage roles, and ban users."
-                        icon={<Users size={28} />}
-                        color="#3b82f6"
-                        link="/admin/users"
-                    />
-                    <ManagementCard
-                        title="Projects Management"
-                        description="Oversee project lifecycle and content."
-                        icon={<Folder size={28} />}
-                        color="#a855f7"
-                        link="/admin/projects"
-                    />
-                    <ManagementCard
-                        title="Join Requests"
-                        description="Review and approve talent applications."
-                        icon={<FileQuestion size={28} />}
-                        color="#f59e0b"
-                        link="/admin/requests"
-                    />
-                </div>
-            </div>
+
 
             {/* Charts Section */}
             <div className="charts-grid">

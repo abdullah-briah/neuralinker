@@ -33,7 +33,7 @@ const UserDashboard = () => {
                     </div>
 
                     {/* Create Card */}
-                    <div className="action-card" onClick={() => navigate('/create-project')}>
+                    <div className="action-card" onClick={() => navigate('/projects')}>
                         <div className="icon-wrapper">
                             <FolderPlus size={32} />
                         </div>

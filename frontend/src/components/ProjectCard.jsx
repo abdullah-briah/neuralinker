@@ -16,11 +16,13 @@ const ProjectCard = ({
     onDelete,
     onViewDetails,
     onQuickView,
-    actionLabel = "View Details" // Default label
+    actionLabel = "View Details",
+    isMember = false,   // New Prop
+    isPending = false   // New Prop
 }) => {
     // Check ownership
     const isOwner = ownerId === currentUserId;
-    const canJoin = !isOwner && onJoin;
+    const canJoin = !isOwner && !isMember && !isPending && onJoin;
 
     // Helper to format date
     const formatDate = (dateStr) => {
@@ -30,8 +32,7 @@ const ProjectCard = ({
 
     return (
         <div className="project-card">
-            {/* Eye Icon Removed as per request */}
-
+            {/* ... Content ... */}
             <div className="card-content">
                 <h3 className="project-title">{title}</h3>
 
@@ -59,14 +60,13 @@ const ProjectCard = ({
             </div>
 
             <div className="project-actions" style={{ flexDirection: 'column', gap: '10px' }}>
-                {/* Main Action Button - Full Width - Now opens Quick View */}
                 <button
                     className="btn-details"
                     onClick={() => {
                         if (onQuickView) onQuickView();
                         else if (onViewDetails) onViewDetails(id);
                     }}
-                    style={{
+                    style={{ // ... styles ...
                         width: '100%',
                         justifyContent: 'center',
                         padding: '12px',
@@ -91,26 +91,30 @@ const ProjectCard = ({
                 </button>
 
                 {/* Secondary Actions Row */}
-                {(isOwner || (canJoin && onJoin)) && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
-                        {isOwner ? (
-                            <div className="owner-actions" style={{ width: '100%', display: 'flex', gap: '10px' }}>
-                                <button className="btn-icon edit" onClick={() => onEdit && onEdit(id)} title="Edit" style={{ flex: 1, justifyContent: 'center', background: 'rgba(255,255,255,0.05)' }}>
-                                    <Edit2 size={16} style={{ marginRight: '5px' }} /> Edit
-                                </button>
-                                <button className="btn-icon delete" onClick={() => onDelete && onDelete(id)} title="Delete" style={{ flex: 1, justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-                                    <Trash2 size={16} style={{ marginRight: '5px' }} /> Delete
-                                </button>
-                            </div>
-                        ) : (
-                            canJoin && (
-                                <button className="btn-join" onClick={onJoin} style={{ flex: 1, justifyContent: 'center' }}>
-                                    Ask to Join <UserPlus size={16} />
-                                </button>
-                            )
-                        )}
-                    </div>
-                )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
+                    {isOwner ? (
+                        <div className="owner-actions" style={{ width: '100%', display: 'flex', gap: '10px' }}>
+                            <button className="btn-icon edit" onClick={() => onEdit && onEdit(id)} title="Edit" style={{ flex: 1, justifyContent: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                                <Edit2 size={16} style={{ marginRight: '5px' }} /> Edit
+                            </button>
+                            <button className="btn-icon delete" onClick={() => onDelete && onDelete(id)} title="Delete" style={{ flex: 1, justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                                <Trash2 size={16} style={{ marginRight: '5px' }} /> Delete
+                            </button>
+                        </div>
+                    ) : isMember ? (
+                        <div style={{ flex: 1, textAlign: 'center', padding: '10px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', borderRadius: '8px', border: '1px solid rgba(34, 197, 94, 0.2)', fontSize: '0.9rem', fontWeight: '600' }}>
+                            ✓ Joined
+                        </div>
+                    ) : isPending ? (
+                        <div style={{ flex: 1, textAlign: 'center', padding: '10px', background: 'rgba(234, 179, 8, 0.1)', color: '#eab308', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.2)', fontSize: '0.9rem', fontWeight: '600' }}>
+                            ⏳ Pending
+                        </div>
+                    ) : (
+                        <button className="btn-join" onClick={onJoin} style={{ flex: 1, justifyContent: 'center' }}>
+                            Ask to Join <UserPlus size={16} />
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

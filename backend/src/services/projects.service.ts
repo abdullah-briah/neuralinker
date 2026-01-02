@@ -63,7 +63,8 @@ export const createProject = async (
  */
 export const getProjects = async (
     limit = 10,
-    offset = 0
+    offset = 0,
+    userId?: string
 ): Promise<Project[]> => {
     return prisma.project.findMany({
         where: { isDeleted: false },
@@ -78,6 +79,16 @@ export const getProjects = async (
                     avatarUrl: true,
                 },
             },
+            // Check if user is a member
+            members: userId ? {
+                where: { userId },
+                select: { id: true }
+            } : false,
+            // Check if user has a pending request
+            joinRequests: userId ? {
+                where: { userId, status: 'pending' },
+                select: { id: true, status: true }
+            } : false,
         },
     });
 };

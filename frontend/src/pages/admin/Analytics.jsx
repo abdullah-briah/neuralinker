@@ -78,18 +78,6 @@ const Analytics = () => {
 
 
 
-                {/* 3. Projects by Category */}
-                <ChartCard title="Projects by Category">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={charts.categoryData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                            <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: 'white' }} />
-                            <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </ChartCard>
 
                 {/* 4. Join Request Status */}
                 <ChartCard title="Join Request Status">

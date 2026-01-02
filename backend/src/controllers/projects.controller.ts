@@ -28,9 +28,10 @@ export const create = async (req: AuthRequest, res: Response) => {
  * Get All Projects
  * ===============================
  */
-export const list = async (_req: AuthRequest, res: Response) => {
+export const list = async (req: AuthRequest, res: Response) => {
     try {
-        const projects = await projectService.getProjects();
+        const userId = req.user?.id;
+        const projects = await projectService.getProjects(10, 0, userId);
         res.json(projects);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
