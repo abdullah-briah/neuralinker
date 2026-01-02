@@ -19,11 +19,14 @@ export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
     const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
 
     if (existingUser) {
-        if (existingUser.isVerified) {
+        // If user exists and is NOT deleted and IS verified, then it's a duplicate
+        if (existingUser.isVerified && !existingUser.isDeleted) {
             throw new Error('Email is already registered');
         }
 
-        // إذا كان المستخدم غير مفعل، قم بتحديث بياناته وإعادة إرسال رمز التحقق
+        // Handle Reactivation (Deleted User) or Re-registration (Unverified User)
+        const isReactivation = existingUser.isDeleted;
+
         const hashedPassword = await bcrypt.hash(data.password, 10);
 
         const updatedUser = await prisma.user.update({
@@ -31,8 +34,15 @@ export const register = async (data: Prisma.UserCreateInput): Promise<User> => {
             data: {
                 name: data.name,
                 password: hashedPassword,
+                isDeleted: false, // Reactivate if deleted
+                deletedAt: null,
+                isVerified: false // Force re-verification
             },
         });
+
+        // However, the previous logic for unverified was: update data, send email.
+        // Let's merge both: Update data, set isVerified=false (to force email check), set isDeleted=false.
+
 
         // أنشئ توكن التحقق بصلاحية يوم واحد
         const verificationToken = jwt.sign({ id: updatedUser.id }, JWT_SECRET, { expiresIn: '1d' });
@@ -81,6 +91,8 @@ export const login = async (email: string, password: string): Promise<{ token: s
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error('Invalid credentials');
+
+    if (user.isDeleted) throw new Error('Your account has been deleted. Please register again to reactivate.');
 
     if (!user.isVerified) throw new Error('Please verify your email before logging in.');
 

@@ -121,11 +121,12 @@ const ProjectDetails = () => {
     if (error) return <div className="error-state">{error}</div>;
     if (!project) return null;
 
-    // Access Control: Check if user is owner or member
+    // Access Control: Check if user is owner or member or admin
     const isOwner = project.owner?.id === user?.id;
     const isMember = project.members?.some(m => m.user.id === user?.id);
+    const isAdmin = user?.role === 'admin';
 
-    if (!isOwner && !isMember) {
+    if (!isOwner && !isMember && !isAdmin) {
         return (
             <div className="container" style={{ paddingTop: '4rem', textAlign: 'center' }}>
                 <h1 style={{ color: '#ef4444' }}>Access Denied</h1>

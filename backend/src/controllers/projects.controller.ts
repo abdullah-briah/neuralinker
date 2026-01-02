@@ -216,12 +216,10 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
         if (!project) return res.status(404).json({ message: 'Project not found' });
 
         const isOwner = project.ownerId === userId;
-        const isMember = project.members.some(m => m.userId === userId); // Member table only has accepted members usually?
+        const isMember = project.members.some(m => m.userId === userId);
+        const isAdmin = req.user!.role === 'admin';
 
-        // Check prisma schema: ProjectMember is created only when Accepted? 
-        // Yes, joinRequest is pending, then ProjectMember is created.
-
-        if (!isOwner && !isMember) {
+        if (!isOwner && !isMember && !isAdmin) {
             return res.status(403).json({ message: 'Access denied. You must be a member to view chat.' });
         }
 

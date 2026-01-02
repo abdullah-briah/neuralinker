@@ -32,6 +32,7 @@ import {
     Cell
 } from 'recharts';
 import api from '../../api/axios';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState([
@@ -53,14 +54,21 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
+                // Simulate slight delay for animation effect
+                await new Promise(resolve => setTimeout(resolve, 800));
+
                 const response = await api.get('/admin/stats');
+                // Backend returns { stats: [...], charts: {...} }
                 const { stats: apiStats, charts } = response.data;
-                setApiStatsData(apiStats); // Save raw for toggling
 
-                // Initial load
-                updateProjectStat(apiStats, 'active');
+                setApiStatsData(apiStats || []);
+                setChartsData(charts || { categoryData: [], growthData: [], requestStatusData: [] });
 
-                setChartsData(charts);
+                // Initial load - map API stats to UI stats
+                // API Stats: [{ label: 'Total Users', value: ... }, ...]
+                // UI Stats: [{ title: 'Total Users', value: ... }]
+                updateDashboardStats(apiStats || [], 'active');
+
             } catch (error) {
                 console.error('Failed to fetch admin stats:', error);
             } finally {
@@ -72,24 +80,49 @@ const AdminDashboard = () => {
     }, []);
 
     // Toggle Project Stats
-    const updateProjectStat = (data, filter) => {
-        const activeProj = data.find(s => s.label === 'Active Projects');
-        const deletedProj = data.find(s => s.label === 'Deleted Projects');
-        const target = filter === 'active' ? activeProj : deletedProj;
+    const updateDashboardStats = (data, filter) => {
+        if (!data || data.length === 0) return;
+
+        const getStat = (label) => data.find(s => s.label === label) || { value: 0, change: '0' };
+
+        const activeProj = getStat('Active Projects');
+        const deletedProj = getStat('Deleted Projects');
+        const targetProjExp = filter === 'active' ? activeProj : deletedProj;
 
         setStats([
-            { title: 'Total Users', value: data[0].value.toString(), icon: <Users size={24} />, trend: data[0].change, color: '#3b82f6', static: true },
+            {
+                title: 'Total Users',
+                value: getStat('Total Users').value.toString(),
+                icon: <Users size={24} />,
+                trend: getStat('Total Users').change,
+                color: '#3b82f6',
+                static: true
+            },
             {
                 title: filter === 'active' ? 'Active Projects' : 'Deleted Projects',
-                value: target.value.toString(),
-                icon: filter === 'active' ? <Activity size={24} /> : <Trash2 size={24} />, // Need Trash2 imported
-                trend: target.change,
+                value: targetProjExp.value.toString(),
+                icon: filter === 'active' ? <Activity size={24} /> : <Trash2 size={24} />,
+                trend: targetProjExp.change,
                 color: filter === 'active' ? '#10b981' : '#ef4444',
                 clickable: true,
                 filterType: filter
             },
-            { title: 'Pending Requests', value: data[2].value.toString(), icon: <FileQuestion size={24} />, trend: data[2].change, color: '#f59e0b', static: true },
-            { title: 'Total Projects', value: data[1].value.toString(), icon: <Folder size={24} />, trend: data[1].change, color: '#a855f7', static: true },
+            {
+                title: 'Pending Requests',
+                value: getStat('Pending Requests').value.toString(),
+                icon: <FileQuestion size={24} />,
+                trend: getStat('Pending Requests').change,
+                color: '#f59e0b',
+                static: true
+            },
+            {
+                title: 'Total Projects',
+                value: getStat('Total Projects').value.toString(),
+                icon: <Folder size={24} />,
+                trend: getStat('Total Projects').change,
+                color: '#a855f7',
+                static: true
+            },
         ]);
         setProjectFilter(filter);
     };
@@ -97,7 +130,7 @@ const AdminDashboard = () => {
     const handleStatClick = (stat) => {
         if (stat.clickable) {
             const newFilter = projectFilter === 'active' ? 'deleted' : 'active';
-            updateProjectStat(apiStatsData, newFilter);
+            updateDashboardStats(apiStatsData, newFilter);
         }
     };
 
@@ -110,11 +143,7 @@ const AdminDashboard = () => {
     // Colors for charts
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7'];
 
-    if (loading) {
-        return <div style={{ color: 'white', padding: '2rem', textAlign: 'center' }}>Loading dashboard...</div>;
-    }
-
-    // Helper to convert hex to rgba for background
+    // Helper to convert hex to rgba
     const hexToRgba = (hex, alpha) => {
         let r = 0, g = 0, b = 0;
         // 3 digits
@@ -132,97 +161,47 @@ const AdminDashboard = () => {
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
 
+    if (loading) {
+        return <DashboardSkeleton />;
+    }
+
     return (
-        <div style={{
-            padding: '2rem',
-            color: 'white',
-            fontFamily: "'Inter', sans-serif",
-            maxWidth: '1600px',
-            margin: '0 auto'
-        }}>
+        <div className="dashboard-container">
 
             {/* Header */}
-            <div style={{ marginBottom: '2.5rem' }}>
-                <div>
-                    <h1 style={{
-                        fontSize: '2rem',
-                        fontWeight: '800',
-                        marginBottom: '8px',
-                        background: 'linear-gradient(90deg, #fff, #cbd5e1)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Dashboard Overview
-                    </h1>
-                    <p style={{ color: '#94a3b8', fontSize: '1.05rem' }}>Welcome back, Admin. Here's what's happening today.</p>
-                </div>
-
-                {/* Admin Profile - Moved to Navbar */}
+            <div className="dashboard-header">
+                <h1 className="dashboard-title">Dashboard Overview</h1>
+                <p className="dashboard-subtitle">Welcome back, Admin. Real-time insights at your fingertips.</p>
             </div>
 
             {/* Stats Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2.5rem'
-            }}>
+            <div className="stats-grid">
                 {stats.map((stat, index) => (
-                    <div key={index}
-                        style={{
-                            background: 'rgba(30, 41, 59, 0.6)',
-                            border: stat.clickable ? '1px solid ' + stat.color : '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '20px',
-                            padding: '1.5rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            backdropFilter: 'blur(10px)',
-                            transition: 'all 0.2s',
-                            cursor: stat.clickable ? 'pointer' : 'default',
-                            boxShadow: stat.clickable ? `0 0 15px ${stat.color}33` : 'none'
-                        }}
+                    <div
+                        key={index}
+                        className={`glass-card ${stat.clickable ? 'clickable-card' : ''}`}
+                        style={{ '--card-color': stat.color, '--card-glow': stat.color }}
                         onClick={() => handleStatClick(stat)}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            if (stat.clickable) e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            if (stat.clickable) e.currentTarget.style.background = 'rgba(30, 41, 59, 0.6)';
-                        }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                            <div style={{
-                                padding: '12px',
-                                borderRadius: '14px',
-                                background: hexToRgba(stat.color, 0.2),
-                                color: stat.color
-                            }}>
+                            <div className="stat-icon-wrapper" style={{ background: hexToRgba(stat.color, 0.2), color: stat.color }}>
                                 {stat.icon}
                             </div>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.85rem',
+                            <div className="stat-trend" style={{
                                 color: (stat.trend || '').startsWith('+') ? '#4ade80' : '#f87171',
-                                fontWeight: '600',
-                                background: (stat.trend || '').startsWith('+') ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)',
-                                padding: '4px 8px',
-                                borderRadius: '8px'
+                                background: (stat.trend || '').startsWith('+') ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)'
                             }}>
                                 {(stat.trend || '').startsWith('+') ? <TrendingUp size={14} /> : <Zap size={14} />}
                                 {stat.trend || '0'}
                             </div>
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '2rem', fontWeight: '700', margin: '0 0 4px 0', color: 'white' }}>{stat.value}</h3>
+                            <h3 className="stat-value">{stat.value}</h3>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.95rem' }}>{stat.title}</p>
                                 {stat.clickable && (
-                                    <span style={{ fontSize: '0.75rem', color: stat.color, border: `1px solid ${stat.color}`, padding: '2px 6px', borderRadius: '4px' }}>
-                                        Click to Toggle
+                                    <span style={{ fontSize: '0.75rem', color: stat.color, border: `1px solid ${stat.color}`, padding: '2px 6px', borderRadius: '4px', opacity: 0.8 }}>
+                                        {projectFilter === 'active' ? 'Show Deleted' : 'Show Active'}
                                     </span>
                                 )}
                             </div>
@@ -231,130 +210,41 @@ const AdminDashboard = () => {
                 ))}
             </div>
 
-            {/* Quick Management Section */}
+            {/* Quick Actions (Management Sections) */}
             <div style={{ marginBottom: '2.5rem' }}>
-                <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: '600', color: 'white' }}>Management Sections</h3>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    gap: '1.5rem'
-                }}>
-                    <div
-                        onClick={() => window.location.href = '/admin/users'}
-                        style={{
-                            background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '20px',
-                            padding: '1.5rem',
-                            backdropFilter: 'blur(10px)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                        }}
-                    >
-                        <div style={{ padding: '16px', borderRadius: '14px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' }}>
-                            <Users size={32} />
-                        </div>
-                        <div>
-                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: '600' }}>Users Management</h4>
-                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>Manage roles, view profiles, and ban users.</p>
-                        </div>
-                    </div>
-
-                    <div
-                        onClick={() => window.location.href = '/admin/projects'}
-                        style={{
-                            background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '20px',
-                            padding: '1.5rem',
-                            backdropFilter: 'blur(10px)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            e.currentTarget.style.borderColor = '#a855f7';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                        }}
-                    >
-                        <div style={{ padding: '16px', borderRadius: '14px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' }}>
-                            <Folder size={32} />
-                        </div>
-                        <div>
-                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: '600' }}>Projects Management</h4>
-                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>Oversee projects, statuses, and history.</p>
-                        </div>
-                    </div>
-
-                    <div
-                        onClick={() => window.location.href = '/admin/requests'}
-                        style={{
-                            background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '20px',
-                            padding: '1.5rem',
-                            backdropFilter: 'blur(10px)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            e.currentTarget.style.borderColor = '#f59e0b';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                        }}
-                    >
-                        <div style={{ padding: '16px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>
-                            <FileQuestion size={32} />
-                        </div>
-                        <div>
-                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: '600' }}>Join Requests</h4>
-                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>Accept or reject talent applications.</p>
-                        </div>
-                    </div>
+                <h3 className="chart-title">Quick Actions</h3>
+                <div className="stats-grid">
+                    <ManagementCard
+                        title="Users Management"
+                        description="View profiles, manage roles, and ban users."
+                        icon={<Users size={28} />}
+                        color="#3b82f6"
+                        link="/admin/users"
+                    />
+                    <ManagementCard
+                        title="Projects Management"
+                        description="Oversee project lifecycle and content."
+                        icon={<Folder size={28} />}
+                        color="#a855f7"
+                        link="/admin/projects"
+                    />
+                    <ManagementCard
+                        title="Join Requests"
+                        description="Review and approve talent applications."
+                        icon={<FileQuestion size={28} />}
+                        color="#f59e0b"
+                        link="/admin/requests"
+                    />
                 </div>
             </div>
 
             {/* Charts Section */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-                gap: '2rem',
-                marginBottom: '2rem'
-            }}>
+            <div className="charts-grid">
 
                 {/* Projects by Category (Bar Chart) */}
-                <div style={{
-                    background: 'rgba(30, 41, 59, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '24px',
-                    padding: '2rem',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.25rem', fontWeight: '600', color: 'white' }}>Projects by Category</h3>
-                    <div style={{ height: '300px', width: '100%' }}>
+                <div className="glass-card">
+                    <h3 className="chart-title">Projects by Category</h3>
+                    <div className="chart-container">
                         <ResponsiveContainer>
                             <BarChart data={chartsData.categoryData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -371,12 +261,8 @@ const AdminDashboard = () => {
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip
-                                    contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
-                                    itemStyle={{ color: '#cbd5e1' }}
-                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                />
-                                <Bar dataKey="count" fill="#a855f7" radius={[6, 6, 0, 0]} barSize={40}>
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                <Bar dataKey="count" fill="#a855f7" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500}>
                                     {chartsData.categoryData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={['#a855f7', '#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b'][index % 6]} />
                                     ))}
@@ -387,15 +273,9 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* User Growth (Area Chart) */}
-                <div style={{
-                    background: 'rgba(30, 41, 59, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '24px',
-                    padding: '2rem',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: 'white' }}>New Users per Month</h3>
+                <div className="glass-card">
+                    <div className="chart-title">
+                        <h3>User Growth</h3>
                         <select
                             value={userMonthFilter}
                             onChange={(e) => setUserMonthFilter(e.target.value)}
@@ -403,10 +283,11 @@ const AdminDashboard = () => {
                                 background: '#0f172a',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 color: 'white',
-                                padding: '6px 12px',
+                                padding: '4px 12px',
                                 borderRadius: '8px',
                                 outline: 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
                             }}
                         >
                             <option value="all">All Months</option>
@@ -415,7 +296,7 @@ const AdminDashboard = () => {
                             ))}
                         </select>
                     </div>
-                    <div style={{ height: '300px', width: '100%' }}>
+                    <div className="chart-container">
                         <ResponsiveContainer>
                             <AreaChart data={getFilteredGrowthData()}>
                                 <defs>
@@ -438,9 +319,7 @@ const AdminDashboard = () => {
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip
-                                    contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
-                                />
+                                <Tooltip content={<CustomTooltip />} />
                                 <Area
                                     type="monotone"
                                     dataKey="users"
@@ -448,6 +327,7 @@ const AdminDashboard = () => {
                                     strokeWidth={3}
                                     fillOpacity={1}
                                     fill="url(#colorUsers)"
+                                    animationDuration={1500}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -456,29 +336,15 @@ const AdminDashboard = () => {
 
             </div>
 
-            {/* Bottom Row - Request Status */}
-            <div style={{
-                background: 'rgba(30, 41, 59, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '24px',
-                padding: '2rem',
-                backdropFilter: 'blur(10px)',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '2rem',
-                alignItems: 'center',
-                '@media (max-width: 900px)': {
-                    gridTemplateColumns: '1fr'
-                }
-            }}>
+            {/* Bottom Requests */}
+            <div className="bottom-grid glass-card">
                 <div>
-                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '600', color: 'white' }}>Join Request Stats</h3>
+                    <h3 className="chart-title">Join Request Stats</h3>
                     <p style={{ color: '#94a3b8', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                        Monitoring the acceptance rate of project join requests is crucial for understanding platform liquidity.
-                        A high rejection rate might indicate a mismatch between talent supply and project needs.
+                        Monitoring acceptance rates helps optimize the talent matching integration.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '20px' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                         {chartsData.requestStatusData.map((item, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: COLORS[i % COLORS.length] }}></div>
@@ -488,15 +354,15 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <div style={{ height: '250px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <ResponsiveContainer width={300} height="100%">
+                <div style={{ height: '300px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
                                 data={chartsData.requestStatusData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
+                                innerRadius={70}
+                                outerRadius={110}
                                 paddingAngle={5}
                                 dataKey="value"
                                 stroke="none"
@@ -505,9 +371,7 @@ const AdminDashboard = () => {
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>
-                            <Tooltip
-                                contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
-                            />
+                            <Tooltip content={<CustomTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
@@ -516,5 +380,67 @@ const AdminDashboard = () => {
         </div>
     );
 };
+
+// Sub-components
+const ManagementCard = ({ title, description, icon, color, link }) => (
+    <div
+        className="glass-card action-card clickable-card"
+        style={{ '--card-color': color, '--card-glow': color }}
+        onClick={() => window.location.href = link}
+    >
+        <div className="action-icon" style={{ background: `${color}33`, color: color }}>
+            {icon}
+        </div>
+        <div>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: '600' }}>{title}</h4>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>{description}</p>
+        </div>
+        <div style={{ marginLeft: 'auto', color: color, opacity: 0.5 }}>
+            <ChevronRight size={24} />
+        </div>
+    </div>
+);
+
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div style={{
+                background: '#0f172a',
+                border: '1px solid rgba(255,255,255,0.1)',
+                padding: '12px',
+                borderRadius: '8px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+            }}>
+                <p style={{ margin: '0 0 5px', color: '#cbd5e1', fontWeight: '600' }}>{label || payload[0].name}</p>
+                <p style={{ margin: 0, color: payload[0].fill || payload[0].stroke, fontWeight: 'bold' }}>
+                    {payload[0].value}
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
+
+const DashboardSkeleton = () => (
+    <div className="dashboard-container">
+        <div className="dashboard-header">
+            <div className="skeleton" style={{ width: '300px', height: '40px', marginBottom: '10px' }}></div>
+            <div className="skeleton" style={{ width: '400px', height: '20px' }}></div>
+        </div>
+        <div className="stats-grid">
+            {[1, 2, 3, 4].map(i => (
+                <div key={i} className="glass-card" style={{ height: '180px' }}>
+                    <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '12px', marginBottom: '20px' }}></div>
+                    <div className="skeleton" style={{ width: '100px', height: '40px', marginBottom: '10px' }}></div>
+                    <div className="skeleton" style={{ width: '150px', height: '20px' }}></div>
+                </div>
+            ))}
+        </div>
+        <div className="charts-grid">
+            <div className="glass-card" style={{ height: '400px' }}><div className="skeleton" style={{ width: '100%', height: '100%' }}></div></div>
+            <div className="glass-card" style={{ height: '400px' }}><div className="skeleton" style={{ width: '100%', height: '100%' }}></div></div>
+        </div>
+    </div>
+);
 
 export default AdminDashboard;

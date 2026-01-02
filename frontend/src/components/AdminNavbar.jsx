@@ -68,8 +68,7 @@ const AdminNavbar = () => {
 
                 {/* Icons Group */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '24px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                    <IconButton icon={<Bell size={20} />} label="Notifications" count={3} />
-                    <IconButton icon={<Settings size={20} />} label="Settings" />
+                    {/* Removed Notifications and Settings as per user request */}
                 </div>
 
                 {/* Profile & Logout */}

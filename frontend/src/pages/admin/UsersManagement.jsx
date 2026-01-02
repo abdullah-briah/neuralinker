@@ -100,15 +100,19 @@ const UsersManagement = () => {
     }, [page, searchTerm, roleFilter]);
 
     // Handlers
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            // Implement API delete call here
-            addToast('Delete functionality triggered (Backend impl required)', 'info');
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            try {
+                await api.delete(`/admin/users/${id}`);
+                addToast('User deleted successfully', 'success');
+                // Refresh list locally
+                setUsers(prev => prev.filter(u => u.id !== id));
+                setTotalUsers(prev => prev - 1);
+            } catch (error) {
+                console.error('Delete failed:', error);
+                addToast(error.response?.data?.message || 'Failed to delete user', 'error');
+            }
         }
-    };
-
-    const handleEdit = (name) => {
-        addToast(`Editing user: ${name}`, 'info');
     };
 
     const handlePageChange = (newPage) => {
@@ -304,8 +308,6 @@ const UsersManagement = () => {
                                     <td style={{ padding: '20px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                                             <ActionButton icon={<Eye size={16} />} label="View" color="#3b82f6" onClick={() => window.location.href = `/profile/${user.id}`} />
-                                            {/* Edit and Delete reserved for future implementation or modal triggers */}
-                                            <ActionButton icon={<Edit2 size={16} />} label="Edit" color="#f59e0b" onClick={() => handleEdit(user.name)} />
                                             <ActionButton icon={<Trash2 size={16} />} label="Delete" color="#ef4444" onClick={() => handleDelete(user.id)} />
                                         </div>
                                     </td>

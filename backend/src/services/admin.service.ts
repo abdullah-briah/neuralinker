@@ -51,18 +51,43 @@ export const getDashboardStats = async () => {
     });
     const requestStatusData = requestStats.map((r: any) => ({ name: r.status, value: r._count?.status || 0 }));
 
+    // 4. User Verification Status
+    const verifiedUsers = await prisma.user.count({ where: { isVerified: true } });
+    const unverifiedUsers = await prisma.user.count({ where: { isVerified: false } });
+    const userVerificationData = [
+        { name: 'Verified', value: verifiedUsers },
+        { name: 'Unverified', value: unverifiedUsers }
+    ];
+
+    // 5. User Roles Distribution
+    const adminUsers = await prisma.user.count({ where: { role: 'admin' } });
+    const regularUsers = await prisma.user.count({ where: { role: 'user' } });
+    const userRoleData = [
+        { name: 'Admin', value: adminUsers },
+        { name: 'User', value: regularUsers }
+    ];
+
+    // 6. Project Status (Active vs Deleted)
+    const projectStatusData = [
+        { name: 'Active', value: activeProjects },
+        { name: 'Deleted', value: deletedProjects }
+    ];
+
     return {
         stats: [
             { label: 'Total Users', value: totalUsers, change: '+0%' },
             { label: 'Total Projects', value: totalProjects, change: '+0%' },
             { label: 'Pending Requests', value: pendingRequests, change: '0' },
             { label: 'Active Projects', value: activeProjects, change: '+0%' },
-            { label: 'Deleted Projects', value: deletedProjects, change: '+0%' } // Added
+            { label: 'Deleted Projects', value: deletedProjects, change: '+0%' }
         ],
         charts: {
             categoryData,
             growthData,
-            requestStatusData
+            requestStatusData,
+            userVerificationData,
+            userRoleData,
+            projectStatusData
         }
     };
 };
@@ -78,6 +103,9 @@ export const getAllUsers = async (page = 1, limit = 10, search = '', role = 'all
     if (role !== 'all') {
         where.role = role as UserRole;
     }
+
+    // Exclude deleted users
+    where.isDeleted = false;
 
     const users = await prisma.user.findMany({
         where,
@@ -143,4 +171,29 @@ export const getAllJoinRequests = async (page = 1, limit = 10, search = '', stat
     const total = await prisma.joinRequest.count({ where });
 
     return { requests, total, pages: Math.ceil(total / limit) };
+};
+
+
+
+export const deleteUser = async (id: string) => {
+    // Soft delete user
+    return await prisma.user.update({
+        where: { id },
+        data: { isDeleted: true, deletedAt: new Date() }
+    });
+};
+
+export const deleteProject = async (id: string) => {
+    // Soft delete project
+    return await prisma.project.update({
+        where: { id },
+        data: { isDeleted: true, isActive: false, deletedAt: new Date() }
+    });
+};
+
+export const updateJoinRequestStatus = async (id: string, status: string) => {
+    return await prisma.joinRequest.update({
+        where: { id },
+        data: { status: status as JoinRequestStatus }
+    });
 };

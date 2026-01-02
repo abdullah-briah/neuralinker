@@ -77,10 +77,18 @@ const ProjectsManagement = () => {
     }, [page, searchTerm, statusFilter]);
 
     // Handlers
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Soft delete this project?')) {
-            // Implement API call
-            addToast('Delete functionality triggered (Backend impl required)', 'info');
+            try {
+                await api.delete(`/admin/projects/${id}`);
+                addToast('Project deleted successfully', 'success');
+                // Refresh list
+                setProjects(prev => prev.filter(p => p.id !== id));
+                setTotalProjects(prev => prev - 1);
+            } catch (error) {
+                console.error('Delete failed:', error);
+                addToast('Failed to delete project', 'error');
+            }
         }
     };
 
@@ -267,7 +275,7 @@ const ProjectsManagement = () => {
                                     </td>
                                     <td style={{ padding: '20px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
-                                            <ActionButton icon={<Eye size={18} />} color="#3b82f6" title="View Details" onClick={() => addToast(`Viewing project ${project.title}`, 'info')} />
+                                            <ActionButton icon={<Eye size={18} />} color="#3b82f6" title="View Details" onClick={() => window.location.href = `/projects/${project.id}`} />
                                             <ActionButton icon={<Edit2 size={18} />} color="#f59e0b" title="Edit Category/Status" onClick={() => handleEdit(project.title)} />
                                             <ActionButton icon={<Trash2 size={18} />} color="#ef4444" title="Soft Delete Project" onClick={() => handleDelete(project.id)} />
                                         </div>
@@ -323,7 +331,7 @@ const ProjectsManagement = () => {
 };
 
 // Helper Action Button
-const ActionButton = ({ icon, color, title }) => (
+const ActionButton = ({ icon, color, title, onClick }) => (
     <button style={{
         background: 'transparent',
         border: 'none',
@@ -337,6 +345,7 @@ const ActionButton = ({ icon, color, title }) => (
         justifyContent: 'center'
     }}
         title={title}
+        onClick={onClick}
         onMouseOver={(e) => {
             e.currentTarget.style.background = `${color}20`; // 20 hex opacity
             e.currentTarget.style.color = color;

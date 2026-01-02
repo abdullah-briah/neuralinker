@@ -76,9 +76,23 @@ const JoinRequestsManagement = () => {
 
     // Handlers
     const handleAction = async (id, action) => {
-        // Optimistic update or API call
-        // For now, mock the API call availability
-        addToast(`Action ${action} triggered (Backend impl in progress)`, 'info');
+        try {
+            await api.patch(`/admin/requests/${id}`, { status: action });
+            addToast(`Request ${action} successfully`, 'success');
+
+            // Remove from list or update status locally
+            // here we remove it because default view is "pending"
+            if (statusFilter === 'pending') {
+                setRequests(prev => prev.filter(r => r.id !== id));
+                setTotalRequests(prev => prev - 1);
+            } else {
+                // If viewing all, update status
+                setRequests(prev => prev.map(r => r.id === id ? { ...r, status: action } : r));
+            }
+        } catch (error) {
+            console.error('Action failed:', error);
+            addToast('Failed to update request', 'error');
+        }
     };
 
     const getStatusStyle = (status) => {

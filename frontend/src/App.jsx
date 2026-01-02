@@ -28,6 +28,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersManagement from "./pages/admin/UsersManagement";
 import ProjectsManagement from "./pages/admin/ProjectsManagement";
 import JoinRequestsManagement from "./pages/admin/JoinRequestsManagement";
+import Analytics from "./pages/admin/Analytics";
 
 /**
  * 🔐 Protected Route
@@ -145,8 +146,7 @@ const AppRoutes = () => {
             <Route path="users" element={<UsersManagement />} />
             <Route path="projects" element={<ProjectsManagement />} />
             <Route path="requests" element={<JoinRequestsManagement />} />
-            {/* Analytics can be a placeholder or reuse Dashboard for now */}
-            <Route path="analytics" element={<AdminDashboard />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/landing" replace />} />

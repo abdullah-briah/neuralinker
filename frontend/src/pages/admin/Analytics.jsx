@@ -76,28 +76,7 @@ const Analytics = () => {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* 2. User Roles Distribution */}
-                <ChartCard title="User Roles Distribution">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={charts.userRoleData}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                                {charts.userRoleData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={ROLE_COLORS[index % ROLE_COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: 'white' }} />
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </ChartCard>
+
 
                 {/* 3. Projects by Category */}
                 <ChartCard title="Projects by Category">
@@ -125,7 +104,29 @@ const Analytics = () => {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* 5. User Growth (Line Chart) */}
+                {/* 5. Project Status: Active vs Deleted */}
+                <ChartCard title="Project Status (Active vs Deleted)">
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={charts.projectStatusData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                            >
+                                <Cell key="cell-active" fill="#10b981" />
+                                <Cell key="cell-deleted" fill="#ef4444" />
+                            </Pie>
+                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: 'white' }} />
+                            <Legend verticalAlign="bottom" height={36} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+
+                {/* 6. User Growth (Line Chart) */}
                 <ChartCard title="User Growth (Last 12 Months)" fullWidth>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={charts.growthData}>
@@ -137,7 +138,6 @@ const Analytics = () => {
                         </LineChart>
                     </ResponsiveContainer>
                 </ChartCard>
-
             </div>
         </div>
     );
