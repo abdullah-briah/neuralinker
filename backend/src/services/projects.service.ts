@@ -282,3 +282,10 @@ export const createProjectMessage = async (
         },
     });
 };
+
+export const deleteMessage = async (messageId: string) => {
+    // Only verify it exists (ownership/permission checked in controller)
+    return prisma.projectMessage.delete({
+        where: { id: messageId }
+    });
+};

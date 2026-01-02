@@ -27,5 +27,6 @@ router.post('/:projectId/join', projectController.joinProject);
 // ✅ Project Chat
 router.get('/:id/messages', projectController.getMessages);
 router.post('/:id/messages', projectController.sendMessage);
+router.delete('/messages/:messageId', projectController.deleteMessage); // New route
 
 export default router;

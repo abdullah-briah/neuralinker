@@ -331,7 +331,7 @@ const ProjectsManagement = () => {
 };
 
 // Helper Action Button
-const ActionButton = ({ icon, color, title, onClick }) => (
+const ActionButton = ({ icon, color, title }) => (
     <button style={{
         background: 'transparent',
         border: 'none',
@@ -345,7 +345,6 @@ const ActionButton = ({ icon, color, title, onClick }) => (
         justifyContent: 'center'
     }}
         title={title}
-        onClick={onClick}
         onMouseOver={(e) => {
             e.currentTarget.style.background = `${color}20`; // 20 hex opacity
             e.currentTarget.style.color = color;

@@ -104,7 +104,7 @@ const Analytics = () => {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* 5. Project Status: Active vs Deleted */}
+                {/* 6. Project Status: Active vs Deleted */}
                 <ChartCard title="Project Status (Active vs Deleted)">
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
@@ -126,7 +126,7 @@ const Analytics = () => {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* 6. User Growth (Line Chart) */}
+                {/* 5. User Growth (Line Chart) */}
                 <ChartCard title="User Growth (Last 12 Months)" fullWidth>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={charts.growthData}>

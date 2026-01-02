@@ -255,8 +255,9 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
         const isOwner = project.ownerId === userId;
         const isMember = project.members.some(m => m.userId === userId);
+        const isAdmin = req.user!.role === 'admin';
 
-        if (!isOwner && !isMember) {
+        if (!isOwner && !isMember && !isAdmin) {
             return res.status(403).json({ message: 'Access denied. You cannot send messages to this project.' });
         }
 
@@ -280,6 +281,44 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         }
 
         res.status(201).json(message);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * ===============================
+ * Delete Project Message
+ * ===============================
+ */
+export const deleteMessage = async (req: AuthRequest, res: Response) => {
+    const { messageId } = req.params;
+    const userId = req.user!.id;
+    const isAdmin = req.user!.role === 'admin';
+
+    try {
+        const message = await prisma.projectMessage.findUnique({
+            where: { id: messageId },
+            include: { project: true }
+        });
+
+        if (!message) {
+            return res.status(404).json({ message: 'Message not found' });
+        }
+
+        // Allow deletion if:
+        // 1. User is the sender
+        // 2. User is the project owner
+        // 3. User is an admin
+        const isSender = message.senderId === userId;
+        const isProjectOwner = message.project.ownerId === userId;
+
+        if (!isSender && !isProjectOwner && !isAdmin) {
+            return res.status(403).json({ message: 'Access denied. You cannot delete this message.' });
+        }
+
+        await projectService.deleteMessage(messageId);
+        res.json({ message: 'Message deleted successfully' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

@@ -296,7 +296,17 @@ const ProjectDetails = () => {
                                 messages.map((msg) => {
                                     const isMe = msg.senderId === user?.id;
                                     return (
-                                        <div key={msg.id} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '75%', display: 'flex', gap: '12px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                                        <div key={msg.id} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '75%', display: 'flex', gap: '12px', flexDirection: isMe ? 'row-reverse' : 'row' }}
+                                            className="group relative" // Tailwind group for showing delete button on hover
+                                            onMouseEnter={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-btn');
+                                                if (btn) btn.style.opacity = '1';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const btn = e.currentTarget.querySelector('.delete-btn');
+                                                if (btn) btn.style.opacity = '0';
+                                            }}
+                                        >
                                             <div title={msg.sender.name} style={{ flexShrink: 0 }}>
                                                 <img src={getAvatarUrl(msg.sender.avatarUrl)} alt={msg.sender.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
                                             </div>
@@ -311,7 +321,8 @@ const ProjectDetails = () => {
                                                     fontSize: '0.95rem',
                                                     lineHeight: '1.5',
                                                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                                    border: isMe ? 'none' : '1px solid rgba(255,255,255,0.1)'
+                                                    border: isMe ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                                                    position: 'relative'
                                                 }}>
                                                     {msg.content}
                                                 </div>
@@ -319,6 +330,44 @@ const ProjectDetails = () => {
                                                     {msg.sender.name} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
+
+                                            {/* Delete Button (Visible for Admin, Owner, or Sender) */}
+                                            {(isAdmin || isOwner || isMe) && (
+                                                <button
+                                                    className="delete-btn"
+                                                    onClick={async () => {
+                                                        if (window.confirm('Delete this message?')) {
+                                                            try {
+                                                                await api.delete(`/projects/messages/${msg.id}`);
+                                                                setMessages(prev => prev.filter(m => m.id !== msg.id));
+                                                            } catch (err) {
+                                                                console.error("Failed to delete message", err);
+                                                                alert("Failed to delete message");
+                                                            }
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        opacity: 0,
+                                                        transition: 'opacity 0.2s',
+                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                        color: '#ef4444',
+                                                        borderRadius: '50%',
+                                                        width: '24px',
+                                                        height: '24px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        alignSelf: 'center',
+                                                        marginLeft: isMe ? '0' : '8px',
+                                                        marginRight: isMe ? '8px' : '0'
+                                                    }}
+                                                    title="Delete Message"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })

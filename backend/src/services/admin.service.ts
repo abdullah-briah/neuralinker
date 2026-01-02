@@ -104,9 +104,6 @@ export const getAllUsers = async (page = 1, limit = 10, search = '', role = 'all
         where.role = role as UserRole;
     }
 
-    // Exclude deleted users
-    where.isDeleted = false;
-
     const users = await prisma.user.findMany({
         where,
         skip: (page - 1) * limit,
@@ -173,21 +170,16 @@ export const getAllJoinRequests = async (page = 1, limit = 10, search = '', stat
     return { requests, total, pages: Math.ceil(total / limit) };
 };
 
-
-
 export const deleteUser = async (id: string) => {
-    // Soft delete user
-    return await prisma.user.update({
-        where: { id },
-        data: { isDeleted: true, deletedAt: new Date() }
-    });
+    // Permanently delete user
+    return await prisma.user.delete({ where: { id } });
 };
 
 export const deleteProject = async (id: string) => {
     // Soft delete project
     return await prisma.project.update({
         where: { id },
-        data: { isDeleted: true, isActive: false, deletedAt: new Date() }
+        data: { isDeleted: true, isActive: false }
     });
 };
 

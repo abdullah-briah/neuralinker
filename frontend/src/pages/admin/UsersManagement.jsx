@@ -145,27 +145,7 @@ const UsersManagement = () => {
                     <p style={{ color: '#94a3b8', margin: 0 }}>Manage user access, roles, and profiles.</p>
                 </div>
 
-                <button
-                    onClick={() => addToast('Add User Modal would open here', 'info')}
-                    style={{
-                        background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '12px 24px',
-                        borderRadius: '12px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)',
-                        transition: 'transform 0.2s'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                    <User size={18} /> Add New User
-                </button>
+                <div></div> {/* Spacer to keep layout if needed, or just remove */}
             </div>
 
             {/* Filters Bar */}
