@@ -31,3 +31,4 @@ build/
 .prisma/
 
 backend/keys/
+scripts/
