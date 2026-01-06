@@ -68,6 +68,7 @@ Every user can be both:
 
 ---
 
+<<<<<<< HEAD
 ## 🏁 Getting Started
 
 Follow these steps to set up the project locally.
@@ -134,6 +135,10 @@ The application will be available at `http://localhost:5173`.
 
 ## 📂 Project Structure
 
+=======
+## 📂 Project Structure
+
+>>>>>>> 336bfdc6a4ae7373d6cc73a751b6a65ffb3be2e7
 ```
 neuralinker/
 ├── backend/            # Express.js API & Database
