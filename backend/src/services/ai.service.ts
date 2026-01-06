@@ -73,86 +73,137 @@ const calculateAdvancedMatch = (
     }
 ): MatchResult => {
 
+    /* ===============================
+       1️⃣ Normalize Data
+    =============================== */
+    const normalize = (arr: string[]) =>
+        arr.map(s => s.toLowerCase().trim());
+
+    const userSkills = normalize(user.skills);
+    const projectSkills = normalize(project.requiredSkills);
+
+    /* ===============================
+       2️⃣ Core Skill Matching (60%)
+    =============================== */
+    const matchedSkills = projectSkills.filter(skill =>
+        userSkills.includes(skill)
+    );
+
+    const missingSkills = projectSkills.filter(skill =>
+        !userSkills.includes(skill)
+    );
+
+    const skillScore =
+        (matchedSkills.length / Math.max(projectSkills.length, 1)) * 60;
+
+    /* ===============================
+       3️⃣ Semantic Relevance (20%)
+    =============================== */
+    const tokenize = (text: string): string[] =>
+        text
+            .toLowerCase()
+            .split(/\W+/)
+            .filter(w => w.length > 3);
+
     const userTokens = new Set([
-        ...user.skills,
         ...tokenize(user.title),
         ...tokenize(user.bio),
     ]);
 
     const projectTokens = new Set([
-        ...project.requiredSkills,
         ...tokenize(project.title),
         ...tokenize(project.shortDescription),
     ]);
 
-    const matched = Array.from(projectTokens).filter(t => userTokens.has(t));
-    const unmatched = Array.from(projectTokens).filter(t => !userTokens.has(t));
+    const semanticOverlap = Array.from(projectTokens)
+        .filter(t => userTokens.has(t));
 
-    /* ---------- Skill Match ---------- */
-    const skillScore =
-        (matched.length / Math.max(projectTokens.size, 1)) * 60;
+    const semanticScore = Math.min(semanticOverlap.length * 3, 20);
 
-    /* ---------- Semantic Overlap ---------- */
-    const semanticScore =
-        (matched.length > 0 ? 1 : 0) * 20;
-
-    /* ---------- Domain Awareness ---------- */
+    /* ===============================
+       4️⃣ Domain Awareness (10%)
+    =============================== */
     let domainScore = 0;
     if (project.category && user.title) {
+        const category = project.category.toLowerCase();
+        const title = user.title.toLowerCase();
+
         if (
-            project.category.toLowerCase().includes("data") &&
-            user.title.toLowerCase().includes("data")
+            category.includes("web") &&
+            (title.includes("full") || title.includes("frontend") || title.includes("backend"))
         ) {
-            domainScore = 15;
-        } else if (
-            project.category.toLowerCase().includes("web") &&
-            user.skills.some(s =>
-                ["sql", "python", "api"].includes(s)
-            )
+            domainScore = 10;
+        }
+
+        if (
+            category.includes("data") &&
+            title.includes("data")
         ) {
-            domainScore = 8; // transferable
+            domainScore = 10;
         }
     }
 
-    /* ---------- Transferable Skills Bonus ---------- */
-    const transferableSkills = ["python", "sql", "analysis", "logic"];
-    const transferableScore =
-        user.skills.some(s => transferableSkills.includes(s)) ? 5 : 0;
+    /* ===============================
+       5️⃣ Adaptability Bonus (10%)
+    =============================== */
+    const transferableSkills = ["javascript", "sql", "api", "logic"];
+    const adaptabilityScore =
+        userSkills.some(s => transferableSkills.includes(s)) ? 10 : 0;
 
-    let rawScore =
+    /* ===============================
+       6️⃣ Final Score
+    =============================== */
+    let finalScore =
         skillScore +
         semanticScore +
         domainScore +
-        transferableScore;
+        adaptabilityScore;
 
-    /* ---------- Floor & Cap ---------- */
-    rawScore = Math.max(rawScore, 10);
-    rawScore = Math.min(rawScore, 100);
+    finalScore = Math.min(Math.max(finalScore, 20), 100);
 
-    /* ---------- Reason ---------- */
+    /* ===============================
+       7️⃣ Explain WHY (Human AI)
+    =============================== */
     let reason = `AI Match Evaluation for ${user.name}:\n`;
-    reason += `- Matched keywords: ${matched.slice(0, 8).join(", ") || "None"}\n`;
-    reason += `- Missing keywords: ${unmatched.slice(0, 8).join(", ") || "None"}\n`;
 
-    if (domainScore > 0 && domainScore < 15) {
-        reason += `- Note: Different primary domain, but transferable skills detected.\n`;
-    }
-
-    if (rawScore >= 80) {
-        reason += `- Overall assessment: Excellent fit.`;
-    } else if (rawScore >= 50) {
-        reason += `- Overall assessment: Good potential match.`;
+    if (matchedSkills.length > 0) {
+        reason += `- The candidate matches key required skills (${matchedSkills.join(", ")}), enabling partial contribution to the project.\n`;
     } else {
-        reason += `- Overall assessment: Partial match with learning potential.`;
+        reason += `- The candidate does not currently meet the core technical requirements of this project.\n`;
     }
 
+    if (missingSkills.length > 0) {
+        reason += `- However, important skills such as (${missingSkills.join(", ")}) are missing, which limits immediate productivity.\n`;
+    }
+
+    if (semanticOverlap.length > 0) {
+        reason += `- The candidate’s background and experience show conceptual alignment with the project objectives.\n`;
+    }
+
+    if (adaptabilityScore > 0) {
+        reason += `- Transferable skills indicate strong learning ability and adaptability.\n`;
+    }
+
+    if (finalScore >= 80) {
+        reason += `- Overall assessment: Excellent fit with high readiness for immediate contribution.`;
+    } else if (finalScore >= 55) {
+        reason += `- Overall assessment: Good fit, but some onboarding or upskilling may be required.`;
+    } else {
+        reason += `- Overall assessment: Limited fit at the moment due to missing core skills, but suitable for growth-oriented roles.`;
+    }
+
+    /* ===============================
+       8️⃣ Return
+    =============================== */
     return {
-        score: Math.round(rawScore),
+        score: Math.round(finalScore),
         reason,
-        matchedSkills: matched,
-        unmatchedSkills: unmatched,
+        matchedSkills,
+        unmatchedSkills: missingSkills,
     };
 };
+
+
 
 /* ===============================
    AI Match (Gemini + Fallback)
